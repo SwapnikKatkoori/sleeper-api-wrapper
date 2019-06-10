@@ -9,28 +9,37 @@ class League(BaseApi):
 		return self._call(self._base_url)
 
 	def get_rosters(self):
-		return self._call("{}{}".format(self._base_url,"/rosters"))
+		return self._call("{}/{}".format(self._base_url,"rosters"))
 
 	def get_users(self):
-		return self._call("{}{}".format(self._base_url,"/users"))
+		return self._call("{}/{}".format(self._base_url,"users"))
 
 	def get_matchups(self, week):
-		return self._call("{}{}{}".format(self._base_url,"/matchups/", week))
+		return self._call("{}/{}/{}".format(self._base_url,"matchups", week))
 
 	def get_playoff_winners_bracket(self):
-		return self._call("{}{}".format(self._base_url,"/winners_bracket"))
+		return self._call("{}/{}".format(self._base_url,"winners_bracket"))
 
 	def get_playoff_losers_bracket(self):
-		return self._call("{}{}".format(self._base_url,"/losers_bracket"))
+		return self._call("{}/{}".format(self._base_url,"losers_bracket"))
 
 	def get_transactions(self, week):
-		return self._call("{}{}{}".format(self._base_url,"/transactions/", week))
+		return self._call("{}/{}/{}".format(self._base_url,"transactions", week))
 
 	def get_traded_picks(self):
-		return self._call("{}{}".format(self._base_url,"/traded_picks"))
+		return self._call("{}/{}".format(self._base_url,"traded_picks"))
 
 	def get_standings(self):
 		pass
 
 	def get_highest_scorer(self):
+		pass
+
+	def get_lowest_scorer(self):
+		pass
+
+	def get_close_games(self, close_num):
+		pass
+
+	def empty_roster_spots(self):
 		pass

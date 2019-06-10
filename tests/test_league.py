@@ -66,8 +66,6 @@ def test_get_traded_picks():
 	league = League(355526480094113792)
 	traded_picks = league.get_traded_picks()
 	first_item = traded_picks[0]
-	with capsys.disabled():
-		print(traded_picks)
 	assert isinstance(traded_picks, list)
 	assert isinstance(first_item, dict)
 
