@@ -1,15 +1,15 @@
-class Drafts():
-	def __init__(self, league_id):
-		self.league_id = league_id
+from .base_api import BaseApi
 
-	def get_all_drafts(self):
-		pass
+class Drafts(BaseApi):
+	def __init__(self, draft_id):
+		self.draft_id = draft_id
+		self._base_url = "https://api.sleeper.app/v1/draft/{}".format(self.draft_id)
 
 	def get_specific_draft(self):
-		pass
+		return self._call(self._base_url)
 
 	def get_all_picks(self):
-		pass
+		return self._call("{}/{}".format(self._base_url,"picks"))
 
 	def get_traded_picks(self):
-		pass
+		return self._call("{}/{}".format(self._base_url,"traded_picks"))

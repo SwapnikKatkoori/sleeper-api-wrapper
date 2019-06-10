@@ -76,14 +76,11 @@ def test_get_all_drafts():
 
 	assert isinstance(drafts, list)
 	assert isinstance(first_item, dict)
-def test_get_standings(capsys):
+def test_get_standings():
 	""" Tests the get_league method"""
 	league = League(355526480094113792)
 	standings = league.get_standings()
 	first_item = standings[0]
-
-	with capsys.disabled():
-		print(standings)
 
 	assert isinstance(first_item, tuple)
 	assert len(standings)==12

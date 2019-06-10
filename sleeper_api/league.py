@@ -63,12 +63,6 @@ class League(BaseApi):
 		
 		return clean_standings_list
 
-	def get_highest_scorer(self):
-		pass
-
-	def get_lowest_scorer(self):
-		pass
-
 	def get_close_games(self, close_num):
 		pass
 
