@@ -33,7 +33,35 @@ class League(BaseApi):
 		return self._call("{}/{}".format(self._base_url, "drafts"))
 
 	def get_standings(self):
-		pass
+		rosters = self.get_rosters()
+		users = self.get_users()
+		users_dict = {}
+
+		#Maps the user_id to team name for easy lookup
+		for user in users:
+			try:
+				users_dict[user["user_id"]] = user["metadata"]["team_name"]
+			except:
+				users_dict[user["user_id"]] = user["display_name"]
+
+		roster_standings_list = []
+		for roster in rosters:
+			wins = roster["settings"]["wins"]
+			points = roster["settings"]["fpts"]
+			name = roster["owner_id"]
+			if name is not None:
+				roster_tuple = (wins, points, users_dict[name])
+			else:
+				roster_tuple = (wins, points, None)
+			roster_standings_list.append(roster_tuple)
+
+		roster_standings_list.sort(reverse = 1)
+
+		clean_standings_list = []
+		for item in roster_standings_list:
+			clean_standings_list.append((item[2], item[0], item[1]))
+		
+		return clean_standings_list
 
 	def get_highest_scorer(self):
 		pass
