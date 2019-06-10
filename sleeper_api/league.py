@@ -29,6 +29,9 @@ class League(BaseApi):
 	def get_traded_picks(self):
 		return self._call("{}/{}".format(self._base_url,"traded_picks"))
 
+	def get_all_drafts(self):
+		return self._call("{}/{}".format(self._base_url, "drafts"))
+
 	def get_standings(self):
 		pass
 

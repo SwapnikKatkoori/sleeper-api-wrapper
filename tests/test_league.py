@@ -69,6 +69,13 @@ def test_get_traded_picks():
 	assert isinstance(traded_picks, list)
 	assert isinstance(first_item, dict)
 
+def test_get_all_drafts():
+	league = League(355526480094113792)
+	drafts = league.get_all_drafts()
+	first_item = drafts[0]
+
+	assert isinstance(drafts, list)
+	assert isinstance(first_item, dict)
 def test_get_standings():
 	""" Tests the get_league method"""
 	pass
