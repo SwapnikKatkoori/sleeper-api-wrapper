@@ -1,4 +1,5 @@
 from sleeper_api import Stats
+import pytest
 
 def test_get_all_stats():
 	stats = Stats()
@@ -27,6 +28,13 @@ def test_get_player_score(capsys):
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] == "Not Available"
 
-	score = stats.get_player_score("3163",2018, 5)
+	score = stats.get_player_score("1262",2018, 5)
+	assert isinstance(score, dict)
+	assert score["pts_ppr"] == "Not Available"
+
+	score = stats.get_player_score("5170",2018, 5)
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] != "Not Available"
+
+	with pytest.raises(Exception):
+		score = stats.get_player_score("30000000",2018, 5)

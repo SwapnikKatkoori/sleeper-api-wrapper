@@ -22,15 +22,27 @@ class Stats(BaseApi):
 	def get_player_score(self, player_id, season, week):
 		result_dict = {}
 		stats = self.get_week_stats("regular", season, week)
-		player_stats = stats[player_id]
+		try:
+			player_stats = stats[player_id]
+		except:
+			raise Exception("player_id not found")
+
 		if stats:
+			print(player_stats)
 			try:
 				result_dict["pts_ppr"] = player_stats["pts_ppr"]
 			except:
 				result_dict["pts_ppr"] = "Not Available"
 
-			result_dict["pts_std"] = player_stats["pts_std"]
-			result_dict["pts_half_ppr"] = player_stats["pts_half_ppr"]
+			try:
+				result_dict["pts_std"] = player_stats["pts_std"]
+			except:
+				result_dict["pts_std"] = "Not Available"
+
+			try:
+				result_dict["pts_half_ppr"] = player_stats["pts_half_ppr"]
+			except:
+				result_dict["pts_half_ppr"] = "Not Available"
 
 		return result_dict
 		
