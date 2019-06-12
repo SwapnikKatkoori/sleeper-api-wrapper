@@ -18,7 +18,9 @@ class User(BaseApi):
 		return self._call("{}/{}/{}/{}/{}".format(self._base_url, self._user_id, "drafts",sport, season ))
 
 	def get_username(self):
+		"""A method that might be useful to convert user_id to username. For example a user can initialize with a user_id and get a username"""
 		return self._username
 
 	def get_user_id(self):
+		"""A method that might be useful to convert username to user_id. For example a user can initialize with a username and get a userid"""
 		return self._user_id
