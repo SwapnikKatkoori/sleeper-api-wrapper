@@ -1,9 +1,10 @@
 from sleeper_api import League 
 
-def test_get_league():
+def test_get_league(capsys):
 	""" Tests the get_league method"""
 	league = League(355526480094113792)
 	league_info = league.get_league()
+
 	assert isinstance(league_info, dict)
 	assert league_info["league_id"] == "355526480094113792"
 
@@ -88,8 +89,8 @@ def test_get_standings():
 
 def test_get_scoreboards():
 	""" Needs more testing after the season starts"""
-	league = League(206827432160788480)
-	scoreboards = league.get_scoreboards(2019, 16)
+	league = League(355526480094113792)
+	scoreboards = league.get_scoreboards(2018, 11)
 
 	assert isinstance(scoreboards, dict)
 

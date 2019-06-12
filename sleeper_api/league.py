@@ -104,7 +104,8 @@ class League(BaseApi):
 				team_name = users_dict[owner_and_points[0]]
 			else:
 				team_name = "Team name not available"
-			team_score = owner_and_points[1]
+			#team_score = owner_and_points[1]
+			team_score = team["points"]
 			team_score_tuple = (team_name, team_score)
 
 			if matchup_id not in scoreboards_dict:
