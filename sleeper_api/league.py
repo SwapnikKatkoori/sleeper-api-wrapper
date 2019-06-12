@@ -63,6 +63,9 @@ class League(BaseApi):
 		
 		return clean_standings_list
 
+	def get_score_boards(self, week):
+		pass
+
 	def get_close_games(self, close_num):
 		pass
 

@@ -19,16 +19,23 @@ class Stats(BaseApi):
 	def get_week_projections(self, season_type, season, week):
 		return self._call("{}/{}/{}/{}".format(self._projections_base_url, season_type, season, week))
 
-	def get_player_score(self, player_id, season, week):
+	def get_player_week_stats(self, season_type, player_id, season, week):
+		stats = self.get_week_stats(season_type, season, week)
+		try:
+			return stats[player_id]
+		except:
+			return None
+
+
+	def get_player_week_score(self, season_type, player_id, season, week):
 		result_dict = {}
-		stats = self.get_week_stats("regular", season, week)
+		stats = self.get_week_stats(season_type, season, week)
 		try:
 			player_stats = stats[player_id]
 		except:
-			raise Exception("player_id not found")
+			return None
 
 		if stats:
-			print(player_stats)
 			try:
 				result_dict["pts_ppr"] = player_stats["pts_ppr"]
 			except:
