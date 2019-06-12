@@ -99,7 +99,7 @@ class League(BaseApi):
 		for team in matchups:
 			matchup_id = team["matchup_id"]
 			current_roster_id = team["roster_id"]
-			owner_id= roster_id_dict[current_roster_id]
+			owner_id = roster_id_dict[current_roster_id]
 			if owner_id is not None:
 				team_name = users_dict[owner_id]
 			else:
