@@ -23,7 +23,7 @@ def test_get_users():
 	assert isinstance(users[0]["user_id"], str)
 	#I guess username is not a thing
 
-def test_get_matchups():
+def test_get_matchups(capsys):
 	""" Tests the get_league method"""
 	league = League(355526480094113792)
 	matchup_info = league.get_matchups(4)
@@ -31,8 +31,9 @@ def test_get_matchups():
 	assert isinstance(matchup_info, list)
 	assert isinstance(first_item, dict)
 
-	matchup_info = league.get_matchups("4")
-	assert isinstance(matchup_info, list)
+	matchup_info = league.get_matchups(20)
+
+	assert len(matchup_info) == 0
 
 def test_get_playoff_winners_bracket():
 	""" Tests the get_league method"""
@@ -84,6 +85,13 @@ def test_get_standings():
 
 	assert isinstance(first_item, tuple)
 	assert len(standings)==12
+
+def test_get_scoreboards():
+	""" Needs more testing after the season starts"""
+	league = League(206827432160788480)
+	scoreboards = league.get_scoreboards(2019, 16)
+
+	assert isinstance(scoreboards, dict)
 
 def test_get_highest_scorer():
 	""" Tests the get_highest_scorer() method"""

@@ -4,9 +4,10 @@ class League(BaseApi):
 	def __init__(self, league_id):
 		self.league_id = league_id
 		self._base_url = "https://api.sleeper.app/v1/league/{}".format(self.league_id)
+		self._league = self._call(self._base_url)
 
 	def get_league(self):
-		return self._call(self._base_url)
+		return self._league
 
 	def get_rosters(self):
 		return self._call("{}/{}".format(self._base_url,"rosters"))
@@ -32,9 +33,8 @@ class League(BaseApi):
 	def get_all_drafts(self):
 		return self._call("{}/{}".format(self._base_url, "drafts"))
 
-	def get_standings(self):
-		rosters = self.get_rosters()
-		users = self.get_users()
+	def map_users_to_team_name(self, users):
+		""" returns dict {user_id:team_name}"""
 		users_dict = {}
 
 		#Maps the user_id to team name for easy lookup
@@ -43,6 +43,12 @@ class League(BaseApi):
 				users_dict[user["user_id"]] = user["metadata"]["team_name"]
 			except:
 				users_dict[user["user_id"]] = user["display_name"]
+		return users_dict
+
+	def get_standings(self):
+		rosters = self.get_rosters()
+		users = self.get_users()
+		users_dict = self.map_users_to_team_name(users)
 
 		roster_standings_list = []
 		for roster in rosters:
@@ -63,8 +69,50 @@ class League(BaseApi):
 		
 		return clean_standings_list
 
-	def get_score_boards(self, week):
-		pass
+	def map_rosterid_to_points(self, rosters ):
+		"""returns: dict {roster_id:[owner_id,pts]} """
+		result_dict = {}
+		for roster in rosters:
+			roster_id = roster["roster_id"]
+			owner_id = roster["owner_id"]
+			points = roster["settings"]["fpts_decimal"]
+			result_dict[roster_id] = [owner_id, points]
+
+		return result_dict
+
+	def get_scoreboards(self, season, current_week):
+		rosters = self.get_rosters()
+		roster_id_dict = self.map_rosterid_to_points(rosters)
+
+		matchups = self.get_matchups(current_week)
+		if len(matchups) == 0:
+			return None
+
+		#Get the users to team name stats
+		users = self.get_users()
+		users_dict = self.map_users_to_team_name(users)
+
+
+		#map roster_id to points 
+		scoreboards_dict = {}
+
+		for team in matchups:
+			matchup_id = team["matchup_id"]
+			current_roster_id = team["roster_id"]
+			owner_and_points = roster_id_dict[current_roster_id]
+			if owner_and_points[0] is not None:
+				team_name = users_dict[owner_and_points[0]]
+			else:
+				team_name = "Team name not available"
+			team_score = owner_and_points[1]
+			team_score_tuple = (team_name, team_score)
+
+			if matchup_id not in scoreboards_dict:
+				scoreboards_dict[matchup_id] = [team_score_tuple]
+			else:
+				scoreboards_dict[matchup_id].append(team_score_tuple)
+		print(scoreboards_dict)
+		return scoreboards_dict
 
 	def get_close_games(self, close_num):
 		pass

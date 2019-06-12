@@ -28,6 +28,7 @@ class Stats(BaseApi):
 
 
 	def get_player_week_score(self, season_type, player_id, season, week):
+		#TODO: Need to cache stats by week, to avoid continuous api calls
 		result_dict = {}
 		stats = self.get_week_stats(season_type, season, week)
 		try:
