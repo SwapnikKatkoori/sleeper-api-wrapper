@@ -113,8 +113,17 @@ class League(BaseApi):
 				scoreboards_dict[matchup_id].append(team_score_tuple)
 		return scoreboards_dict
 
-	def get_close_games(self, close_num):
-		pass
+	def get_close_games(self, season, week, close_num):
+		scoreboards = self.get_scoreboards(season, week)
+		close_games_dict = {}
+		for key in scoreboards:
+			team_one_score = scoreboards[key][0][1]
+			team_two_score = scoreboards[key][1][1]
+
+			if abs(team_one_score-team_two_score) < close_num:
+				close_games_dict[key] = scoreboards[key]
+
+		return close_games_dict
 
 	def empty_roster_spots(self):
 		pass

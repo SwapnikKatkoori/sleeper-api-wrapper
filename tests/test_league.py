@@ -94,6 +94,10 @@ def test_get_scoreboards():
 
 	assert isinstance(scoreboards, dict)
 
-def test_get_highest_scorer():
+def test_get_close_games(capsys):
 	""" Tests the get_highest_scorer() method"""
-	pass
+	league = League(355526480094113792)
+	close_games = league.get_close_games(2018, 11, 10)
+	with capsys.disabled():
+		print(close_games)
+	assert isinstance(close_games, dict)
