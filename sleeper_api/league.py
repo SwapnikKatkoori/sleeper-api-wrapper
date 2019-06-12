@@ -127,3 +127,6 @@ class League(BaseApi):
 
 	def empty_roster_spots(self):
 		pass
+
+	def get_negative_scores(self, week):
+		pass

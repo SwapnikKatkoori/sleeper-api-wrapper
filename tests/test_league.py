@@ -101,3 +101,9 @@ def test_get_close_games(capsys):
 	with capsys.disabled():
 		print(close_games)
 	assert isinstance(close_games, dict)
+
+def test_empty_roster_spots():
+	pass
+
+def test_get_negative_scores():
+	pass
