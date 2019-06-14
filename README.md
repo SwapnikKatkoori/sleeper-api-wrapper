@@ -10,13 +10,13 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
     
     * [Initialization](#init)
     
-    * [Getting a summary](#getsum)
+    * [League](#league)
     
-    * [Getting a reduction percentage](#getred)
+    * [User](#user)
     
-    * [Sentiment Analysis](#sentiment)
+    * [Stats](#stats)
     
-    * [Usage Notes](#note)
+    * [Players](#players)
 
 <a name="install"></a>
 # Install
@@ -24,5 +24,14 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 
 <a name="usage"></a>
 # Usage
-sleeper_wrapper makes all en
+
 <a name="init"></a>
+## Initialization
+
+<a name="league"></a>
+## League
+| Tables   |      Are      |  Cool |
+|----------|:-------------:|------:|
+| col 1 is |  left-aligned | $1600 |
+| col 2 is |    centered   |   $12 |
+| col 3 is | right-aligned |    $1 |
