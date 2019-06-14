@@ -1,4 +1,4 @@
-from sleeper_api import Stats
+from sleeper_wrapper import Stats
 import pytest
 
 def test_get_all_stats(capsys):

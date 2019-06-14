@@ -1,4 +1,4 @@
-from sleeper_api import League 
+from sleeper_wrapper import League 
 
 def test_get_league(capsys):
 	""" Tests the get_league method"""

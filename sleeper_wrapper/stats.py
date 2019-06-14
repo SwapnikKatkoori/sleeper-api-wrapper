@@ -1,4 +1,4 @@
-from sleeper_api import BaseApi
+from sleeper_wrapper import BaseApi
 
 class Stats(BaseApi):
 	def __init__(self):

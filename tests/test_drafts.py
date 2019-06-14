@@ -1,4 +1,4 @@
-from sleeper_api import Drafts
+from sleeper_wrapper import Drafts
 
 def test_get_specific_draft():
 	draft = Drafts(257270643320426496)

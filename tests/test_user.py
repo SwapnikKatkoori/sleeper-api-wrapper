@@ -1,4 +1,4 @@
-from sleeper_api import User
+from sleeper_wrapper import User
 
 def test_get_user(capsys):
 	user = User("swa")

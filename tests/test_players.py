@@ -1,4 +1,4 @@
-from sleeper_api import Players
+from sleeper_wrapper import Players
 
 def test_get_trending_players(capsys):
 	players = Players()
