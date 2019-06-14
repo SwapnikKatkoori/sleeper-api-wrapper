@@ -8,8 +8,6 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 
 2. [Usage](#usage)
     
-    * [Initialization](#init)
-    
     * [League](#league)
     
     * [User](#user)
@@ -24,14 +22,9 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 
 <a name="usage"></a>
 # Usage
-
-<a name="init"></a>
-## Initialization
+There are five objects that get data from the Sleeper API specified below. Most of them are intuative based on the Sleeper Api docs.  
 
 <a name="league"></a>
 ## League
-| Tables   |      Are      |  Cool |
-|----------|:-------------:|------:|
-| col 1 is |  left-aligned | $1600 |
-| col 2 is |    centered   |   $12 |
-| col 3 is | right-aligned |    $1 |
+### get_league()
+Gets data for the league that was specified when the League object was initialized. 
