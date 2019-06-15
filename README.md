@@ -43,6 +43,15 @@ league = League(league_id)
 #### get_league()
 Gets data for the league that was specified when the League object was initialized. 
 
+<a name="user"></a>
+### User
+
+<a name="stats"></a>
+### Stats
+
+<a name="players"></a>
+### Players
+
 <a name="notes"></a>
 # Notes 
 This package is intended to be used by Python version 3.5 and higher. There might be some wacky results for previous versions.
