@@ -9,14 +9,14 @@ def test_get_league(capsys):
 	assert league_info["league_id"] == "355526480094113792"
 
 def test_get_rosters():
-	""" Tests the get_league method"""
+	""" Tests the get_rosters method"""
 	league = League(355526480094113792)
 	rosters = league.get_rosters()
 	assert isinstance(rosters, list) 
 	assert len(rosters)>5
 
 def test_get_users():
-	""" Tests the get_league method"""
+	""" Tests the get_users method"""
 	league = League(355526480094113792)
 	users = league.get_users()
 
@@ -25,7 +25,7 @@ def test_get_users():
 	#I guess username is not a thing
 
 def test_get_matchups(capsys):
-	""" Tests the get_league method"""
+	""" Tests the get_matchups method"""
 	league = League(355526480094113792)
 	matchup_info = league.get_matchups(4)
 	first_item = matchup_info[0]
@@ -37,7 +37,7 @@ def test_get_matchups(capsys):
 	assert len(matchup_info) == 0
 
 def test_get_playoff_winners_bracket():
-	""" Tests the get_league method"""
+	""" Tests the get_playoff_winners_bracket method"""
 	league = League(355526480094113792)
 	bracket = league.get_playoff_winners_bracket()
 	first_item = bracket[0]
@@ -45,7 +45,7 @@ def test_get_playoff_winners_bracket():
 	assert isinstance(first_item, dict)
 
 def test_get_playoff_losers_bracket():
-	""" Tests the get_league method"""
+	""" Tests the get_playoff_losers method"""
 	league = League(355526480094113792)
 	bracket = league.get_playoff_losers_bracket()
 	first_item = bracket[0]
@@ -53,8 +53,8 @@ def test_get_playoff_losers_bracket():
 	assert isinstance(first_item, dict)
 
 def test_get_transactions():
-	""" Tests the get_league method
-	Note: Not realy sure wether this method works or what its supposed to do
+	""" Tests the get_transactions method
+	Note: Not really sure wether this method works or what its supposed to do yet because the season has not fully started.
 	"""
 	league = League(355526480094113792)
 	transactions = league.get_transactions(4)
@@ -64,7 +64,7 @@ def test_get_transactions():
 	assert isinstance(transactions, list)
 
 def test_get_traded_picks():
-	""" Tests the get_league method"""
+	""" Tests the get_traded_picks method"""
 	league = League(355526480094113792)
 	traded_picks = league.get_traded_picks()
 	first_item = traded_picks[0]
@@ -79,7 +79,7 @@ def test_get_all_drafts():
 	assert isinstance(drafts, list)
 	assert isinstance(first_item, dict)
 def test_get_standings():
-	""" Tests the get_league method"""
+	""" Tests the get_standings method"""
 	league = League(355526480094113792)
 	standings = league.get_standings()
 	first_item = standings[0]
@@ -88,14 +88,15 @@ def test_get_standings():
 	assert len(standings)==12
 
 def test_get_scoreboards():
-	""" Needs more testing after the season starts"""
+	"""Tests the get_scoreoards method 
+	-Needs more testing after the season starts"""
 	league = League(355526480094113792)
 	scoreboards = league.get_scoreboards(2018, 11)
 
 	assert isinstance(scoreboards, dict)
 
 def test_get_close_games(capsys):
-	""" Tests the get_highest_scorer() method"""
+	""" Tests the get_close_games method"""
 	league = League(355526480094113792)
 	close_games = league.get_close_games(2018, 11, 10)
 	with capsys.disabled():
