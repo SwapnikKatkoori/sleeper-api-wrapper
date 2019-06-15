@@ -30,6 +30,16 @@ There are five objects that get data from the Sleeper API specified below. Most 
 
 <a name="league"></a>
 ## League
+
+### Initiaize
+```
+from sleeper_wrapper import League
+
+league = League(league_id)
+```
+*Parameters*
+- league_id: the id of your sleeper league(string) 
+
 ### get_league()
 Gets data for the league that was specified when the League object was initialized. 
 
