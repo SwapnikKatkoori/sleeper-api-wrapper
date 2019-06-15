@@ -30,7 +30,7 @@ There are five objects that get data from the Sleeper API specified below. Most 
 
 <a name="league"></a>
 
- **League**
+### League
 
 #### Initiaize
 ```
