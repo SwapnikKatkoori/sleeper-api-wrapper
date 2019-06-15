@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper.svg?branch=master)](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper)
 # sleeper-api-wrapper
+[![Build Status](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper.svg?branch=master)](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper)
 A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved. It makes all endpoints found in the sleeper api docs: https://docs.sleeper.app/ available.
 
 
