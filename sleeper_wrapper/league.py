@@ -130,3 +130,6 @@ class League(BaseApi):
 
 	def get_negative_scores(self, week):
 		pass
+
+	def get_rosters_players(self):
+		pass
