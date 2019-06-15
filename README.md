@@ -38,7 +38,7 @@ from sleeper_wrapper import League
 
 league = League(league_id)
 ```
-*Parameters*
+Parameters
 - league_id: the id of your sleeper league(string) 
 
 #### get_league()
