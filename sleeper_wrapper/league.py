@@ -79,17 +79,15 @@ class League(BaseApi):
 
 		return result_dict
 
-	def get_scoreboards(self, season, current_week):
+	def get_scoreboards(self, rosters, matchups, users):
 		""" returns dict {matchup_id:[(team_name,score), (team_name, score)]}"""
-		rosters = self.get_rosters()
 		roster_id_dict = self.map_rosterid_to_ownerid(rosters)
 
-		matchups = self.get_matchups(current_week)
+		
 		if len(matchups) == 0:
 			return None
 
 		#Get the users to team name stats
-		users = self.get_users()
 		users_dict = self.map_users_to_team_name(users)
 
 
@@ -111,10 +109,10 @@ class League(BaseApi):
 				scoreboards_dict[matchup_id] = [team_score_tuple]
 			else:
 				scoreboards_dict[matchup_id].append(team_score_tuple)
+		print(scoreboards_dict)
 		return scoreboards_dict
 
-	def get_close_games(self, season, week, close_num):
-		scoreboards = self.get_scoreboards(season, week)
+	def get_close_games(self, scoreboards, close_num):
 		close_games_dict = {}
 		for key in scoreboards:
 			team_one_score = scoreboards[key][0][1]
