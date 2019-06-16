@@ -100,7 +100,7 @@ def test_get_scoreboards():
 def test_get_close_games(capsys):
 	""" 
 	Tests the get_close_games method
-	-Notes: Need to test more. There could be some errors with javascript sorting. 
+	-Notes: Need to test more. 
 	"""
 	league = League(355526480094113792)
 	matchups = league.get_matchups(11)
