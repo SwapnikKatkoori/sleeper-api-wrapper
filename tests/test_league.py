@@ -91,8 +91,10 @@ def test_get_scoreboards():
 	"""Tests the get_scoreoards method 
 	-Needs more testing after the season starts"""
 	league = League(355526480094113792)
-	scoreboards = league.get_scoreboards(2018, 11)
-
+	matchups = league.get_matchups(11)
+	users = league.get_users()
+	rosters = league.get_rosters()
+	scoreboards = league.get_scoreboards(rosters, matchups, users)
 	assert isinstance(scoreboards, dict)
 
 def test_get_close_games(capsys):
@@ -101,7 +103,11 @@ def test_get_close_games(capsys):
 	-Notes: Need to test more. There could be some errors with javascript sorting. 
 	"""
 	league = League(355526480094113792)
-	close_games = league.get_close_games(2018, 11, 10)
+	matchups = league.get_matchups(11)
+	users = league.get_users()
+	rosters = league.get_rosters()
+	scoreboards = league.get_scoreboards(rosters, matchups, users)
+	close_games = league.get_close_games(scoreboards, 10)
 	with capsys.disabled():
 		print(close_games)
 	assert isinstance(close_games, dict)
