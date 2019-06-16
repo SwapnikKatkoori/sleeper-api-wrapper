@@ -23,29 +23,31 @@ def test_get_week_projections():
 
 def test_get_player_week_score(capsys):
 	stats = Stats()
-	score = stats.get_player_week_score("regular","GB",2018, 5)
+	week_stats = stats.get_week_stats("regular",2018, 5)
+	score = stats.get_player_week_score(week_stats, "GB")
 
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] == "Not Available"
 
-	score = stats.get_player_week_score("regular", "1262",2018, 5)
+	score = stats.get_player_week_score(week_stats, "1262")
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] == "Not Available"
 
-	score = stats.get_player_week_score("regular", "5170",2018, 5)
+	score = stats.get_player_week_score(week_stats, "5170")
 
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] != "Not Available"
 
 	
-	score = stats.get_player_week_score("regular","30000000",2018, 5)
+	score = stats.get_player_week_score(week_stats, "30000000000")
 	assert score is None
 
 def test_get_player_week_stats():
 	stats = Stats()
-	week_stats = stats.get_player_week_stats("regular", "1262", 2018, 5)
+	week_stats = stats.get_week_stats("regular", 2018, 5)
+	player_week_stats = stats.get_player_week_score(week_stats, "1262")
 
-	assert isinstance(week_stats, dict)
+	assert isinstance(player_week_stats, dict)
 
-	week_stats = stats.get_player_week_stats("regular", "3000000", 2018, 5)
-	assert week_stats is None
+	player_week_stats = stats.get_player_week_score(week_stats, "300000000")
+	assert player_week_stats is None
