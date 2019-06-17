@@ -13,6 +13,17 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
     
     * [League](#league)
         * [get_league()](#get_league)
+        * [get_rosters()](#get_rosters)
+        * [get_users()](#get_users)
+        * [get_matchups()](#get_matchups)
+        * [get_playoff_winners_bracket()](#get_playoff_winners_racket)
+        * [get_playoff_losers_bracket()](#get_playoff_losers_racket)
+        * [get_transactions()](#get_transactions)
+        * [get_traded_picks()](#get_traded_picks)
+        * [get_all_drafts()](#get_all_drafts)
+        * [get_standings()](#get_standings)
+        * [get_scoreboards()](#get_scoreboards)
+        * [get_close_games()](#get_close_games)
     * [User](#user)
     
     * [Stats](#stats)
