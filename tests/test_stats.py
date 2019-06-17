@@ -25,18 +25,20 @@ def test_get_player_week_score(capsys):
 	stats = Stats()
 	week_stats = stats.get_week_stats("regular",2018, 5)
 	score = stats.get_player_week_score(week_stats, "GB")
+	with capsys.disabled():
+		print(score)
 
 	assert isinstance(score, dict)
-	assert score["pts_ppr"] == "Not Available"
+	assert score["pts_ppr"] == None
 
 	score = stats.get_player_week_score(week_stats, "1262")
 	assert isinstance(score, dict)
-	assert score["pts_ppr"] == "Not Available"
+	assert score["pts_ppr"] == None
 
 	score = stats.get_player_week_score(week_stats, "5170")
 
 	assert isinstance(score, dict)
-	assert score["pts_ppr"] != "Not Available"
+	assert score["pts_ppr"] != None
 
 	
 	score = stats.get_player_week_score(week_stats, "30000000000")
@@ -45,9 +47,9 @@ def test_get_player_week_score(capsys):
 def test_get_player_week_stats():
 	stats = Stats()
 	week_stats = stats.get_week_stats("regular", 2018, 5)
-	player_week_stats = stats.get_player_week_score(week_stats, "1262")
+	player_week_stats = stats.get_player_week_stats(week_stats, "1262")
 
 	assert isinstance(player_week_stats, dict)
 
-	player_week_stats = stats.get_player_week_score(week_stats, "300000000")
+	player_week_stats = stats.get_player_week_stats(week_stats, "300000000")
 	assert player_week_stats is None

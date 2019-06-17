@@ -78,16 +78,18 @@ def test_get_all_drafts():
 
 	assert isinstance(drafts, list)
 	assert isinstance(first_item, dict)
-def test_get_standings():
+def test_get_standings(capsys):
 	""" Tests the get_standings method"""
 	league = League(355526480094113792)
 	standings = league.get_standings()
 	first_item = standings[0]
 
+	with capsys.disabled():
+		print(standings)
 	assert isinstance(first_item, tuple)
 	assert len(standings)==12
 
-def test_get_scoreboards():
+def test_get_scoreboards(capsys):
 	"""Tests the get_scoreoards method 
 	-Needs more testing after the season starts"""
 	league = League(355526480094113792)
@@ -95,6 +97,8 @@ def test_get_scoreboards():
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
+	with capsys.disabled():
+		print(scoreboards)
 	assert isinstance(scoreboards, dict)
 
 def test_get_close_games(capsys):
@@ -108,8 +112,6 @@ def test_get_close_games(capsys):
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
 	close_games = league.get_close_games(scoreboards, 10)
-	with capsys.disabled():
-		print(close_games)
 	assert isinstance(close_games, dict)
 
 def test_empty_roster_spots():
