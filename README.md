@@ -53,37 +53,47 @@ league = League(league_id)
 ```
 - league_id: (str)The id of your sleeper league
 
+<a name="get_league"></a>
 #### League.get_league()
 Gets data for the league that was specified when the League object was initialized. Data returned looks like: https://docs.sleeper.app/#get-a-specific-league
 
+<a name="get_rosters"></a>
 #### League.get_rosters()
 Gets all of the rosters in the league. Data returned looks like: https://docs.sleeper.app/#getting-rosters-in-a-league 
 
+<a name="get_users"></a>
 #### League.get_users()
 Gets all of the users in the league. Data returned looks like: https://docs.sleeper.app/#getting-users-in-a-league
 
+<a name="get_matchups"></a>
 #### League.get_matchups(week)
 Gets all of the users in the league. Data returned looks like: https://docs.sleeper.app/#getting-matchups-in-a-league
 
 - week:(int or string) week of the matchups to be returned.
 
+<a name="get_playoff_winners_bracket"></a>
 #### League.get_playoff_winners_bracket()
 Gets the playoff winners bracket for the league. Data returned looks like: https://docs.sleeper.app/#getting-the-playoff-bracket
 
+<a name="get_playoff_losers_bracket"></a>
 #### League.get_playoff_losers_bracket()
 Gets the playoff losers bracket for the league. Data returned looks like: https://docs.sleeper.app/#getting-the-playoff-bracket
 
+<a name="get_transactions"></a>
 #### League.get_transactions(week)
 Gets all of the transactions data in the league. Data returned looks like: https://docs.sleeper.app/#get-transactions
 
 - week:(int or str) week of the matchups to be returned.
 
+<a name="get_traded_picks"></a>
 #### League.get_traded_picks()
 Gets all of the traded picks in the league. Data returned looks like: https://docs.sleeper.app/#get-traded-picks
 
+<a name="get_all_drafts"></a>
 #### League.get_all_drafts()
 Gets all of the draft data in the league. Data returned looks like: https://docs.sleeper.app/#get-all-drafts-for-a-league
 
+<a name="get_standings"></a>
 #### League.get_standings(rosters, users)
 Gets the standings in a league. Returns a list of the standings in order of most wins to least wins.
 - rosters: (list)The data returned by the get_rosters() method.
@@ -94,9 +104,10 @@ Data returned looks like:
 ```
 [(username, number_of_wins, total_points), (username, number_of_wins, total_points),...]
 ```
-- types: username(int)
+- types: username(str), number_of_wins(int), total_points(int)
 - "username" could be None if a user does not have a username.
 
+<a name="get_scoreboards"></a>
 #### League.get_scoreboards(rosters, matchups, users)
 Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 - rosters: (list)The data returned by the get_rosters() method.
@@ -110,6 +121,7 @@ Data returned looks like:
 ```
 - types: matchup_id(int), team_name(str), score(float)
 
+<a name="get_close_games"></a>
 #### League.get_close_games(scoreboards, close_num)
 Gets all of the close games in a league. Returns a dict.
 - scoreboards: (dict)The data returned by the get_scoreboards() method.
