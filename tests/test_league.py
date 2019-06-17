@@ -81,7 +81,9 @@ def test_get_all_drafts():
 def test_get_standings():
 	""" Tests the get_standings method"""
 	league = League(355526480094113792)
-	standings = league.get_standings()
+	rosters = league.get_rosters()
+	users = league.get_users()
+	standings = league.get_standings(rosters,users)
 	first_item = standings[0]
 
 	assert isinstance(first_item, tuple)
