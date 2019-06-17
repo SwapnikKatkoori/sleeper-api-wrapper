@@ -116,20 +116,20 @@ Gets the standings in a league. Returns a list of the standings in order of most
 
 Data returned looks like: 
 
-```
+~~~
 [(username, number_of_wins, total_points), (username, number_of_wins, total_points),...]
-```
+~~~
 - types: username(str), number_of_wins(int), total_points(int)
 - "username" could be None if a user does not have a username.
 
 Example usage:
 
-```
+~~~
     	league = League(league_id)
 	rosters = league.get_rosters()
 	users = league.get_users()
 	standings = league.get_standings(rosters,users)
-```
+~~~
 
 <a name="get_scoreboards"></a>
 ### League.get_scoreboards(rosters, matchups, users)
@@ -140,20 +140,20 @@ Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 
 Data returned looks like: 
 
-```
+~~~
 {matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... }
-```
+~~~
 - types: matchup_id(int), team_name(str), score(float)
 
 Example usage:
 
-```
+~~~
     	league = League(league_id)
 	matchups = league.get_matchups(11)
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
-```
+~~~
 <a name="get_close_games"></a>
 ### League.get_close_games(scoreboards, close_num)
 Gets all of the close games in a league. Returns a dict.
@@ -162,31 +162,31 @@ Gets all of the close games in a league. Returns a dict.
 
 Data returned looks like: 
 
-```
+~~~
 {matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } 
-```
+~~~
 - types: matchup_id(int), team_name(str), score(float)
 
 Example usage:
 
-```
+~~~
     	league = League(league_id)
 	matchups = league.get_matchups(11)
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
 	close_games = league.get_close_games(scoreboards, 10)
-```
+~~~
 <a name="user"></a>
 ## User
 
 <a name="user_initialize"></a>
 ### Initiaize
-```
+~~~
 from sleeper_wrapper import User
 
 user = User(user_id)
-```
+~~~
 - user_id: (str)The id of a user. It can also be a username. 
 
 <a name="get_user"></a>
@@ -220,11 +220,11 @@ Returns the user_id of the User. This can be useful if the User was initialized 
 
 <a name="stats_initialize"></a>
 ### Initiaize
-```
+~~~
 from sleeper_wrapper import Stats
 
 league = Stats()
-```
+~~~
 <a name="get_all_stats"></a>
 ### Stats.get_all_stats(season_type, season)
 Gets all of the stats in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
@@ -263,29 +263,29 @@ Gets the player score of a specified week.
 - player_id: (str) The player_id of the player to get the stats of. ex. 2018,2019, etc.
 
 Data returned looks like:
-```
+~~~
 {'pts_ppr':score_float, 'pts_std': score_float, 'pts_half_ppr': score_float}
-```
+~~~
 - types: score_float(float)
 - If the score is not available for a format, the value will be None.
 
 Example usage:
 
-```
+~~~
     	stats = Stats()
 	week_stats = stats.get_week_stats("regular",2018, 5)
 	score = stats.get_player_week_score(week_stats, "DET")
-```
+~~~
 <a name="players"></a>
 ## Players
 
 <a name="players_initialize"></a>
 ### Initiaize
-```
+~~~
 from sleeper_wrapper import Players
 
 players = Players()
-```
+~~~
 <a name="get_all_players"></a>
 ### Players.get_all_players()
 Gets all of the players in fantasy football. Data returned looks like: https://docs.sleeper.app/#fetch-all-players
