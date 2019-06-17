@@ -19,6 +19,8 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
     
     * [Players](#players)
 3. [Notes](#notes)
+4. [Dependecnies](#depends)
+5. [License](#license)
 
 <a name="install"></a>
 # Install
@@ -205,3 +207,16 @@ Gets all of the players in fantasy football. Data returned looks like: https://d
 <a name="notes"></a>
 # Notes 
 This package is intended to be used by Python version 3.5 and higher. There might be some wacky results for previous versions.
+
+<a name="depends"></a>
+# Dependancies
+
+[requests](https://github.com/kennethreitz/requests)
+- Used for all http requests in sleeper_wrapper
+
+[pytest](https://github.com/pytest-dev/pytest)
+- Used for all testing in sleeper_wrapper
+
+<a name="license"></a>
+# License
+This project is licensed under the terms of the MIT license.
