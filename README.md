@@ -2,7 +2,7 @@
 ![GitHub](https://img.shields.io/github/license/SwapnikKatkoori/sleeper_wrapper.svg?color=blue)
 ![GitHub issues](https://img.shields.io/github/issues/SwapnikKatkoori/sleeper_wrapper.svg?color=orange)
 # sleeper_wrapper
-A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved. It makes all endpoints found in the sleeper api docs: https://docs.sleeper.app/ available.
+A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved. It makes all endpoints found in the sleeper api docs: https://docs.sleeper.app/ available and turns the JSON recieved into python types for easy usage.
 
 
 # Table of Contents
@@ -76,7 +76,9 @@ Gets the standings in a league. Returns a list of the standings in order of most
 - rosters: (list)The data returned by the get_rosters() method.
 - users: (list)The data returned by the get_standings() method.
 Data returned looks like: 
-```[("username", "number_of_wins", "total_points"), ("username", "number_of_wins", "total_points"),...]```
+```
+[("username", "number_of_wins", "total_points"), ("username", "number_of_wins", "total_points"),...]
+```
 
 #### League.get_scoreboards(rosters, matchups, users)
 Gets the scoreboards of the league. Returns a dict of league mathups and scores.
@@ -84,7 +86,10 @@ Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 - matchups: (list)The data returned by the get_mathcups() method.
 - users: (list)The data returned by the get_standings() method.
 Data returned looks like: 
-```{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } ```
+
+```
+{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... }
+```
 
 #### League.get_close_games(scoreboards, close_num)
 Gets all of the close games in a league. Returns a dict.
@@ -92,7 +97,10 @@ Gets all of the close games in a league. Returns a dict.
 - close_num: (int)How close the games need to be considered a close game. For example, if the close num is 5, the data returned would only include matchups that are within 5 points of each other.
 
 Data returned looks like: 
-```{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } ```
+
+```
+{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } 
+```
 <a name="user"></a>
 ### User
 
