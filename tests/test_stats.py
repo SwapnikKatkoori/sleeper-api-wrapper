@@ -25,8 +25,7 @@ def test_get_player_week_score(capsys):
 	stats = Stats()
 	week_stats = stats.get_week_stats("regular",2018, 5)
 	score = stats.get_player_week_score(week_stats, "GB")
-	with capsys.disabled():
-		print(score)
+
 
 	assert isinstance(score, dict)
 	assert score["pts_ppr"] == None

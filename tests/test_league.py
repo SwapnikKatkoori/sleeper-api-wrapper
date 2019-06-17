@@ -12,6 +12,7 @@ def test_get_rosters():
 	""" Tests the get_rosters method"""
 	league = League(355526480094113792)
 	rosters = league.get_rosters()
+	
 	assert isinstance(rosters, list) 
 	assert len(rosters)>5
 
@@ -41,6 +42,7 @@ def test_get_playoff_winners_bracket():
 	league = League(355526480094113792)
 	bracket = league.get_playoff_winners_bracket()
 	first_item = bracket[0]
+
 	assert isinstance(bracket, list)
 	assert isinstance(first_item, dict)
 
@@ -49,6 +51,7 @@ def test_get_playoff_losers_bracket():
 	league = League(355526480094113792)
 	bracket = league.get_playoff_losers_bracket()
 	first_item = bracket[0]
+
 	assert isinstance(bracket, list)
 	assert isinstance(first_item, dict)
 
@@ -68,6 +71,7 @@ def test_get_traded_picks():
 	league = League(355526480094113792)
 	traded_picks = league.get_traded_picks()
 	first_item = traded_picks[0]
+
 	assert isinstance(traded_picks, list)
 	assert isinstance(first_item, dict)
 
@@ -86,8 +90,6 @@ def test_get_standings(capsys):
 	standings = league.get_standings(rosters,users)
 	first_item = standings[0]
 
-	with capsys.disabled():
-		print(standings)
 	assert isinstance(first_item, tuple)
 	assert len(standings)==12
 
@@ -99,8 +101,6 @@ def test_get_scoreboards(capsys):
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
-	with capsys.disabled():
-		print(scoreboards)
 	assert isinstance(scoreboards, dict)
 
 def test_get_close_games(capsys):
