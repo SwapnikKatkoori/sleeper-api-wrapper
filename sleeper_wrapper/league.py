@@ -45,9 +45,7 @@ class League(BaseApi):
 				users_dict[user["user_id"]] = user["display_name"]
 		return users_dict
 
-	def get_standings(self):
-		rosters = self.get_rosters()
-		users = self.get_users()
+	def get_standings(self, rosters, users):
 		users_dict = self.map_users_to_team_name(users)
 
 		roster_standings_list = []
@@ -65,7 +63,7 @@ class League(BaseApi):
 
 		clean_standings_list = []
 		for item in roster_standings_list:
-			clean_standings_list.append((item[2], item[0], item[1]))
+			clean_standings_list.append((item[2], str(item[0]), str(item[1])))
 		
 		return clean_standings_list
 
@@ -109,10 +107,10 @@ class League(BaseApi):
 				scoreboards_dict[matchup_id] = [team_score_tuple]
 			else:
 				scoreboards_dict[matchup_id].append(team_score_tuple)
-		print(scoreboards_dict)
 		return scoreboards_dict
 
 	def get_close_games(self, scoreboards, close_num):
+		""" -Notes: Need to find a better way to compare scores rather than abs value of the difference of floats. """
 		close_games_dict = {}
 		for key in scoreboards:
 			team_one_score = scoreboards[key][0][1]
@@ -120,7 +118,6 @@ class League(BaseApi):
 
 			if abs(team_one_score-team_two_score) < close_num:
 				close_games_dict[key] = scoreboards[key]
-
 		return close_games_dict
 
 	def empty_roster_spots(self):
