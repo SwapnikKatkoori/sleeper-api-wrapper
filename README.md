@@ -122,6 +122,15 @@ Data returned looks like:
 - types: username(str), number_of_wins(int), total_points(int)
 - "username" could be None if a user does not have a username.
 
+Example usage:
+
+```
+    league = League(league_id)
+	rosters = league.get_rosters()
+	users = league.get_users()
+	standings = league.get_standings(rosters,users)
+```
+
 <a name="get_scoreboards"></a>
 ### League.get_scoreboards(rosters, matchups, users)
 Gets the scoreboards of the league. Returns a dict of league mathups and scores.
@@ -136,6 +145,15 @@ Data returned looks like:
 ```
 - types: matchup_id(int), team_name(str), score(float)
 
+Example usage:
+
+```
+    league = League(league_id)
+	matchups = league.get_matchups(11)
+	users = league.get_users()
+	rosters = league.get_rosters()
+	scoreboards = league.get_scoreboards(rosters, matchups, users)
+```
 <a name="get_close_games"></a>
 ### League.get_close_games(scoreboards, close_num)
 Gets all of the close games in a league. Returns a dict.
@@ -149,6 +167,16 @@ Data returned looks like:
 ```
 - types: matchup_id(int), team_name(str), score(float)
 
+Example usage:
+
+```
+    league = League(league_id)
+	matchups = league.get_matchups(11)
+	users = league.get_users()
+	rosters = league.get_rosters()
+	scoreboards = league.get_scoreboards(rosters, matchups, users)
+	close_games = league.get_close_games(scoreboards, 10)
+```
 <a name="user"></a>
 ## User
 
@@ -241,6 +269,13 @@ Data returned looks like:
 - types: score_float(float)
 - If the score is not available for a format, the value will be None.
 
+Example usage:
+
+```
+    stats = Stats()
+	week_stats = stats.get_week_stats("regular",2018, 5)
+	score = stats.get_player_week_score(week_stats, "DET")
+```
 <a name="players"></a>
 ## Players
 
