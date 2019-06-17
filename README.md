@@ -125,7 +125,7 @@ Data returned looks like:
 Example usage:
 
 ```
-    league = League(league_id)
+    	league = League(league_id)
 	rosters = league.get_rosters()
 	users = league.get_users()
 	standings = league.get_standings(rosters,users)
@@ -148,7 +148,7 @@ Data returned looks like:
 Example usage:
 
 ```
-    league = League(league_id)
+    	league = League(league_id)
 	matchups = league.get_matchups(11)
 	users = league.get_users()
 	rosters = league.get_rosters()
@@ -170,7 +170,7 @@ Data returned looks like:
 Example usage:
 
 ```
-    league = League(league_id)
+    	league = League(league_id)
 	matchups = league.get_matchups(11)
 	users = league.get_users()
 	rosters = league.get_rosters()
@@ -272,7 +272,7 @@ Data returned looks like:
 Example usage:
 
 ```
-    stats = Stats()
+    	stats = Stats()
 	week_stats = stats.get_week_stats("regular",2018, 5)
 	score = stats.get_player_week_score(week_stats, "DET")
 ```
