@@ -136,6 +136,51 @@ Returns the user_id of the User. This can be useful if the User was initialized 
 <a name="stats"></a>
 ### Stats
 
+#### Initiaize
+```
+from sleeper_wrapper import Stats
+
+league = Stats()
+```
+
+#### Stats.get_all_stats(season_type, season)
+Gets all of the stats in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
+
+- season_type: (str) The type of the season. Supports "regular", "pre", "post".
+- season: (int or str) The season of the leagues. ex. 2018,2019, etc.
+
+#### Stats.get_week_stats(season_type, season, week)
+Gets all of the stats for a specific week in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
+
+- season_type: (str) The type of the season. Supports "regular", "pre", "post".
+- season: (int or str) The season of the leagues. ex. 2018,2019, etc.
+- week: (int or str) The week of the stats to get.
+
+#### Stats.get_all_projections(season_type, season)
+Gets all of the projections in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
+
+- season_type: (str) The type of the season. Supports "regular", "pre", "post".
+- season: (int or str) The season of the leagues. ex. 2018,2019, etc.
+
+#### Stats.get_week_projections(season_type, season, week)
+Gets all of the projections for a specific week in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
+
+- season_type: (str) The type of the season. Supports "regular", "pre", "post".
+- season: (int or str) The season of the leagues. ex. 2018,2019, etc.
+- week: (int or str) The week of the stats to get.
+
+#### Stats.get_player_week_score(week_stats, player_id)
+Gets the player score of a specified week.
+
+- week_stats: (dict) The result of the method get_week_stats().
+- player_id: (str) The player_id of the player to get the stats of. ex. 2018,2019, etc.
+
+Data returned looks like:
+```
+{'pts_ppr':score_float, 'pts_std': score_float, 'pts_half_ppr': score_float}
+```
+If the score is not available for a format, the value will be None.
+
 <a name="players"></a>
 ### Players
 
