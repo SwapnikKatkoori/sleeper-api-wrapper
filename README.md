@@ -95,7 +95,7 @@ Gets the playoff winners bracket for the league. Data returned looks like: https
 Gets the playoff losers bracket for the league. Data returned looks like: https://docs.sleeper.app/#getting-the-playoff-bracket
 
 <a name="get_transactions"></a>
-#### League.get_transactions(week)
+### League.get_transactions(week)
 Gets all of the transactions data in the league. Data returned looks like: https://docs.sleeper.app/#get-transactions
 
 - week:(int or str) week of the matchups to be returned.
@@ -150,10 +150,10 @@ Data returned looks like:
 - types: matchup_id(int), team_name(str), score(float)
 
 <a name="user"></a>
-### User
+## User
 
 <a name="user_initialize"></a>
-#### Initiaize
+### Initiaize
 ```
 from sleeper_wrapper import User
 
@@ -162,50 +162,50 @@ user = User(user_id)
 - user_id: (str)The id of a user. It can also be a username. 
 
 <a name="get_user"></a>
-#### User.get_user()
+### User.get_user()
 Gets data for the user that was specified by the user_id or username when the User object was initialized. Data returned looks like: https://docs.sleeper.app/#user
 
 <a name="get_all_leagues"></a>
-#### User.get_all_leagues(sport, season)
+### User.get_all_leagues(sport, season)
 Gets the data of all of the leagues that a user belongs to. Data returned looks like: https://docs.sleeper.app/#get-all-leagues-for-user
 
 - sport: (str)The sport of the leagues. Currently, it can ony be "nfl".
 - season: (int or str)The season of the leagues. ex. 2018,2019, etc.
 
 <a name="get_all_drafts"></a>
-#### User.get_all_drafts(sport, season)
+### User.get_all_drafts(sport, season)
 Gets the data of all of the drafts of a user in the specified season. Data returned looks like: https://docs.sleeper.app/#get-all-drafts-for-user
 
 - sport: (str)The sport of the leagues. Currently, it can ony be "nfl".
 - season: (int or str)The season of the leagues. ex. 2018,2019, etc.
 
 <a name="get_username"></a>
-#### User.get_username()
+### User.get_username()
 Returns the username of the User. This can be useful if the User was initialized with a user_id.
 
 <a name="get_user_id"></a>
-#### User.get_user_id()
+### User.get_user_id()
 Returns the user_id of the User. This can be useful if the User was initialized with a username.
 
 <a name="stats"></a>
-### Stats
+## Stats
 
 <a name="stats_initialize"></a>
-#### Initiaize
+### Initiaize
 ```
 from sleeper_wrapper import Stats
 
 league = Stats()
 ```
 <a name="get_all_stats"></a>
-#### Stats.get_all_stats(season_type, season)
+### Stats.get_all_stats(season_type, season)
 Gets all of the stats in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
 
 - season_type: (str) The type of the season. Supports "regular", "pre", "post".
 - season: (int or str) The season of the leagues. ex. 2018,2019, etc.
 
 <a name="get_week_stats"></a>
-#### Stats.get_week_stats(season_type, season, week)
+### Stats.get_week_stats(season_type, season, week)
 Gets all of the stats for a specific week in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
 
 - season_type: (str) The type of the season. Supports "regular", "pre", "post".
@@ -213,14 +213,14 @@ Gets all of the stats for a specific week in a season. Data returned looks like:
 - week: (int or str) The week of the stats to get.
 
 <a name="get_all_projections"></a>
-#### Stats.get_all_projections(season_type, season)
+### Stats.get_all_projections(season_type, season)
 Gets all of the projections in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
 
 - season_type: (str) The type of the season. Supports "regular", "pre", "post".
 - season: (int or str) The season of the leagues. ex. 2018,2019, etc.
 
 <a name="get_week_projections"></a>
-#### Stats.get_week_projections(season_type, season, week)
+### Stats.get_week_projections(season_type, season, week)
 Gets all of the projections for a specific week in a season. Data returned looks like: https://docs.sleeper.app/#stats-and-projections
 
 - season_type: (str) The type of the season. Supports "regular", "pre", "post".
@@ -228,7 +228,7 @@ Gets all of the projections for a specific week in a season. Data returned looks
 - week: (int or str) The week of the stats to get.
 
 <a name="get_player_week_score"></a>
-#### Stats.get_player_week_score(week_stats, player_id)
+### Stats.get_player_week_score(week_stats, player_id)
 Gets the player score of a specified week.
 
 - week_stats: (dict) The result of the method get_week_stats().
@@ -242,21 +242,21 @@ Data returned looks like:
 - If the score is not available for a format, the value will be None.
 
 <a name="players"></a>
-### Players
+## Players
 
 <a name="players_initialize"></a>
-#### Initiaize
+### Initiaize
 ```
 from sleeper_wrapper import Players
 
 players = Players()
 ```
 <a name="get_all_players"></a>
-#### Players.get_all_players()
+### Players.get_all_players()
 Gets all of the players in fantasy football. Data returned looks like: https://docs.sleeper.app/#fetch-all-players
 
 <a name="get_trending_players"></a>
-#### Players.get_trending_players(sport, add_drop, hours, limit)
+### Players.get_trending_players(sport, add_drop, hours, limit)
 Gets all of the players in fantasy football. Data returned looks like: https://docs.sleeper.app/#trending-players
 
 - sport: (str) The sport to get. Supports only "nfl" right now.
