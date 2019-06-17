@@ -61,11 +61,11 @@ There are five objects that get data from the Sleeper API specified below. Most 
 
 <a name="league_initialize"></a>
 ### Initiaize
-```
+~~~
 from sleeper_wrapper import League
 
 league = League(league_id)
-```
+~~~
 - league_id: (str)The id of your sleeper league
 
 <a name="get_league"></a>
