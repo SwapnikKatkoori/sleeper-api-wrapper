@@ -104,6 +104,35 @@ Data returned looks like:
 <a name="user"></a>
 ### User
 
+#### Initiaize
+```
+from sleeper_wrapper import User
+
+user = User(user_id)
+```
+- user_id: (str)The id of a user. It can also be a username. 
+
+#### User.get_user()
+Gets data for the user that was specified by the user_id or username when the User object was initialized. Data returned looks like: https://docs.sleeper.app/#user
+
+#### User.get_all_leagues(sport,  season)
+Gets the data of all of the leagues that a user belongs to. Data returned looks like: https://docs.sleeper.app/#get-all-leagues-for-user
+
+- sport: (str)The sport of the leagues. Currently, it can ony be "nfl".
+- season: (int or str)The season of the leagues. ex. 2018,2019, etc.
+
+#### User.get_all_drafts(sport,  season)
+Gets the data of all of the drafts of a user in the specified season. Data returned looks like: https://docs.sleeper.app/#get-all-drafts-for-user
+
+- sport: (str)The sport of the leagues. Currently, it can ony be "nfl".
+- season: (int or str)The season of the leagues. ex. 2018,2019, etc.
+
+#### User.get_username()
+Returns the username of the User. This can be useful if the User was initialized with a user_id.
+
+#### User.get_user_id()
+Returns the user_id of the User. This can be useful if the User was initialized with a username.
+
 <a name="stats"></a>
 ### Stats
 
