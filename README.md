@@ -49,11 +49,13 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 
 <a name="install"></a>
 # Install
-
+~~~
+pip install sleeper-api-wrapper
+~~~
 
 <a name="usage"></a>
 # Usage
-There are five objects that get data from the Sleeper API specified below. Most of them are intuative based on the Sleeper Api docs.  
+There are five objects that get data from the Sleeper API specified below. Most of them are intuitive based on the Sleeper Api docs.  
 
 <a name="league"></a>
 
