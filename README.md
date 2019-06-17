@@ -12,7 +12,7 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 2. [Usage](#usage)
     
     * [League](#league)
-    
+        * [get_league()](#get_league)
     * [User](#user)
     
     * [Stats](#stats)
