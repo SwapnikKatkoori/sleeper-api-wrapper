@@ -77,21 +77,27 @@ Gets all of the draft data in the league. Data returned looks like: https://docs
 Gets the standings in a league. Returns a list of the standings in order of most wins to least wins.
 - rosters: (list)The data returned by the get_rosters() method.
 - users: (list)The data returned by the get_standings() method.
+
 Data returned looks like: 
+
 ```
-[("username", "number_of_wins", "total_points"), ("username", "number_of_wins", "total_points"),...]
+[(username, number_of_wins, total_points), (username, number_of_wins, total_points),...]
 ```
+- types: username(int)
+- "username" could be None if a user does not have a username.
 
 #### League.get_scoreboards(rosters, matchups, users)
 Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 - rosters: (list)The data returned by the get_rosters() method.
 - matchups: (list)The data returned by the get_mathcups() method.
 - users: (list)The data returned by the get_standings() method.
+
 Data returned looks like: 
 
 ```
 {matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... }
 ```
+- types: matchup_id(int), team_name(str), score(float)
 
 #### League.get_close_games(scoreboards, close_num)
 Gets all of the close games in a league. Returns a dict.
@@ -103,6 +109,8 @@ Data returned looks like:
 ```
 {matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } 
 ```
+- types: matchup_id(int), team_name(str), score(float)
+
 <a name="user"></a>
 ### User
 
@@ -181,7 +189,8 @@ Data returned looks like:
 ```
 {'pts_ppr':score_float, 'pts_std': score_float, 'pts_half_ppr': score_float}
 ```
-If the score is not available for a format, the value will be None.
+- types: score_float(float)
+- If the score is not available for a format, the value will be None.
 
 <a name="players"></a>
 ### Players
