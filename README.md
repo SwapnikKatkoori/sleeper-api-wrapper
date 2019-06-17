@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SwapnikKatkoori/sleeper-api-wrapper.svg?branch=master)](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper)
+[![Build Status](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper.svg?branch=master)](https://travis-ci.org/SwapnikKatkoori/sleeper_wrapper)
 ![GitHub](https://img.shields.io/github/license/SwapnikKatkoori/sleeper-api-wrapper.svg?color=blue)
 ![GitHub issues](https://img.shields.io/github/issues/SwapnikKatkoori/sleeper-api-wrapper.svg?color=orange)
 # sleeper-api-wrapper
