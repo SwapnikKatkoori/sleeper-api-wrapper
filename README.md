@@ -2,7 +2,7 @@
 ![GitHub](https://img.shields.io/github/license/SwapnikKatkoori/sleeper_wrapper.svg?color=blue)
 ![GitHub issues](https://img.shields.io/github/issues/SwapnikKatkoori/sleeper_wrapper.svg?color=orange)
 # sleeper_wrapper
-A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved. It makes all endpoints found in the sleeper api docs: https://docs.sleeper.app/ available and turns the JSON recieved into python types for easy usage.
+A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved. It makes all endpoints found in the sleeper api docs: https://docs.sleeper.app/ available and turns the JSON response recieved into python types for easy usage.
 
 
 # Table of Contents
