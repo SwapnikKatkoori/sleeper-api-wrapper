@@ -184,6 +184,24 @@ If the score is not available for a format, the value will be None.
 <a name="players"></a>
 ### Players
 
+#### Initiaize
+```
+from sleeper_wrapper import Players
+
+players = Players()
+```
+
+#### Players.get_all_players()
+Gets all of the players in fantasy football. Data returned looks like: https://docs.sleeper.app/#fetch-all-players
+
+#### Players.get_trending_players(sport, add_drop, hours, limit)
+Gets all of the players in fantasy football. Data returned looks like: https://docs.sleeper.app/#trending-players
+
+- sport: (str) The sport to get. Supports only "nfl" right now.
+- add_drop: (str) Either "add" or "drop".
+- hours: (int or str) Number of hours to look back. Default is 24 hours.
+- limit: (int or str) Number of results you want. Default is 25.
+
 <a name="notes"></a>
 # Notes 
 This package is intended to be used by Python version 3.5 and higher. There might be some wacky results for previous versions.
