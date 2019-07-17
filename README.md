@@ -225,7 +225,7 @@ Returns the user_id of the User. This can be useful if the User was initialized 
 ~~~
 from sleeper_wrapper import Stats
 
-league = Stats()
+stats = Stats()
 ~~~
 <a name="get_all_stats"></a>
 ### Stats.get_all_stats(season_type, season)
