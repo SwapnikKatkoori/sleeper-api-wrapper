@@ -53,17 +53,18 @@ class League(BaseApi):
 			wins = roster["settings"]["wins"]
 			points = roster["settings"]["fpts"]
 			name = roster["owner_id"]
+			losses = roster["settings"]["losses"]
 			if name is not None:
-				roster_tuple = (wins, points, users_dict[name])
+				roster_tuple = (wins, losses, points, users_dict[name])
 			else:
-				roster_tuple = (wins, points, None)
+				roster_tuple = (wins, losses, points, None)
 			roster_standings_list.append(roster_tuple)
 
 		roster_standings_list.sort(reverse = 1)
 
 		clean_standings_list = []
 		for item in roster_standings_list:
-			clean_standings_list.append((item[2], str(item[0]), str(item[1])))
+			clean_standings_list.append((item[3], str(item[0]), str(item[1]), str(item[2])))
 		
 		return clean_standings_list
 
@@ -81,7 +82,7 @@ class League(BaseApi):
 		""" returns dict {matchup_id:[(team_name,score), (team_name, score)]}"""
 		roster_id_dict = self.map_rosterid_to_ownerid(rosters)
 
-		
+
 		if len(matchups) == 0:
 			return None
 
@@ -89,7 +90,7 @@ class League(BaseApi):
 		users_dict = self.map_users_to_team_name(users)
 
 
-		#map roster_id to points 
+		#map roster_id to points
 		scoreboards_dict = {}
 
 		for team in matchups:

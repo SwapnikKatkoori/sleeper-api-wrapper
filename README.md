@@ -10,7 +10,7 @@ A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify 
 1. [ Installation ](#install)
 
 2. [Usage](#usage)
-    
+
     * [League](#league)
         * [Initialize](#league_initialize)
         * [get_league()](#get_league)
@@ -76,7 +76,7 @@ Gets data for the league that was specified when the League object was initializ
 
 <a name="get_rosters"></a>
 ### League.get_rosters()
-Gets all of the rosters in the league. Data returned looks like: https://docs.sleeper.app/#getting-rosters-in-a-league 
+Gets all of the rosters in the league. Data returned looks like: https://docs.sleeper.app/#getting-rosters-in-a-league
 
 <a name="get_users"></a>
 ### League.get_users()
@@ -116,12 +116,12 @@ Gets the standings in a league. Returns a list of the standings in order of most
 - rosters: (list)The data returned by the get_rosters() method.
 - users: (list)The data returned by the get_standings() method.
 
-Data returned looks like: 
+Data returned looks like:
 
 ~~~
-[(username, number_of_wins, total_points), (username, number_of_wins, total_points),...]
+[(username, number_of_wins, number_of_losses, total_points), (username, number_of_wins, number_of_losses, total_points),...]
 ~~~
-- types: username(str), number_of_wins(int), total_points(int)
+- types: username(str), number_of_wins(int), number_of_losses(int), total_points(int)
 - "username" could be None if a user does not have a username.
 
 Example usage:
@@ -140,7 +140,7 @@ Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 - matchups: (list)The data returned by the get_mathcups() method.
 - users: (list)The data returned by the get_standings() method.
 
-Data returned looks like: 
+Data returned looks like:
 
 ~~~
 {matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... }
@@ -162,10 +162,10 @@ Gets all of the close games in a league. Returns a dict.
 - scoreboards: (dict)The data returned by the get_scoreboards() method.
 - close_num: (int)How close the games need to be considered a close game. For example, if the close num is 5, the data returned would only include matchups that are within 5 points of each other.
 
-Data returned looks like: 
+Data returned looks like:
 
 ~~~
-{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... } 
+{matchup_id:[(team_name,score), (team_name, score)], matchup_id:[(team_name,score), (team_name, score)], ... }
 ~~~
 - types: matchup_id(int), team_name(str), score(float)
 
@@ -189,7 +189,7 @@ from sleeper_wrapper import User
 
 user = User(user_id)
 ~~~
-- user_id: (str)The id of a user. It can also be a username. 
+- user_id: (str)The id of a user. It can also be a username.
 
 <a name="get_user"></a>
 ### User.get_user()
@@ -302,7 +302,7 @@ Gets all of the players in fantasy football. Data returned looks like: https://d
 - limit: (int or str) Number of results you want. Default is 25.
 
 <a name="notes"></a>
-# Notes 
+# Notes
 This package is intended to be used by Python version 3.5 and higher. There might be some wacky results for previous versions.
 
 <a name="depends"></a>
