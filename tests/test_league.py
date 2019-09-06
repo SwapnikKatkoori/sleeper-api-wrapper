@@ -100,7 +100,7 @@ def test_get_scoreboards(capsys):
 	matchups = league.get_matchups(1)
 	users = league.get_users()
 	rosters = league.get_rosters()
-	scoreboards = league.get_scoreboards(rosters, matchups, users, "pts_half_ppr")
+	scoreboards = league.get_scoreboards(rosters, matchups, users, "pts_half_ppr", 1)
 	print(scoreboards)
 	assert isinstance(scoreboards, dict)
 
@@ -113,7 +113,7 @@ def test_get_close_games(capsys):
 	matchups = league.get_matchups(1)
 	users = league.get_users()
 	rosters = league.get_rosters()
-	scoreboards = league.get_scoreboards(rosters, matchups, users, "pts_half_ppr")
+	scoreboards = league.get_scoreboards(rosters, matchups, users, "pts_half_ppr", 1)
 	close_games = league.get_close_games(scoreboards, 10)
 	assert isinstance(close_games, dict)
 
