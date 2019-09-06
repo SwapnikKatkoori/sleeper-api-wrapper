@@ -135,11 +135,12 @@ Example usage:
 ~~~
 
 <a name="get_scoreboards"></a>
-### League.get_scoreboards(rosters, matchups, users)
+### League.get_scoreboards(rosters, matchups, users, score_type)
 Gets the scoreboards of the league. Returns a dict of league mathups and scores.
 - rosters: (list)The data returned by the get_rosters() method.
 - matchups: (list)The data returned by the get_mathcups() method.
 - users: (list)The data returned by the get_standings() method.
+- score_type: (string) either "pts_std", "pts_half_ppr", or "pts_ppr".
 
 Data returned looks like:
 
