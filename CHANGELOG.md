@@ -7,3 +7,6 @@
 ## Version 1.0.3
 - Added losses to standings
 - Updated documentation
+
+## Version 1.0.4
+- Fixed scoreboards bug caused by sleeper api giving None as custom pts
