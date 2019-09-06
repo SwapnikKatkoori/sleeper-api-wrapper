@@ -96,11 +96,12 @@ def test_get_standings(capsys):
 def test_get_scoreboards(capsys):
 	"""Tests the get_scoreoards method 
 	-Needs more testing after the season starts"""
-	league = League(355526480094113792)
-	matchups = league.get_matchups(11)
+	league = League(442724598706860032)
+	matchups = league.get_matchups(1)
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)
+	print(scoreboards)
 	assert isinstance(scoreboards, dict)
 
 def test_get_close_games(capsys):
@@ -108,8 +109,8 @@ def test_get_close_games(capsys):
 	Tests the get_close_games method
 	-Notes: Need to test more. 
 	"""
-	league = League(355526480094113792)
-	matchups = league.get_matchups(11)
+	league = League(442724598706860032)
+	matchups = league.get_matchups(1)
 	users = league.get_users()
 	rosters = league.get_rosters()
 	scoreboards = league.get_scoreboards(rosters, matchups, users)

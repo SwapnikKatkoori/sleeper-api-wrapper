@@ -1,4 +1,5 @@
 from .base_api import BaseApi
+from .stats import Stats
 
 class League(BaseApi):
 	def __init__(self, league_id):
@@ -101,9 +102,12 @@ class League(BaseApi):
 				team_name = users_dict[owner_id]
 			else:
 				team_name = "Team name not available"
-			team_score = team["points"]
-			team_score_tuple = (team_name, team_score)
 
+			team_score = self.get_team_score(team["starters"])
+			if team_score is None:
+				team_score = 0
+
+			team_score_tuple = (team_name, team_score)
 			if matchup_id not in scoreboards_dict:
 				scoreboards_dict[matchup_id] = [team_score_tuple]
 			else:
@@ -121,6 +125,15 @@ class League(BaseApi):
 				close_games_dict[key] = scoreboards[key]
 		return close_games_dict
 
+	def get_team_score(self,starters):
+		total_score = 0
+		stats = Stats()
+		week_stats = stats.get_week_stats("regular", 2019, 1)
+		for starter in starters:
+			if stats.get_player_week_stats(week_stats, starter) is not None:
+				total_score += stats.get_player_week_stats(week_stats, starter)["pts_half_ppr"]
+		return total_score
+		
 	def empty_roster_spots(self):
 		pass
 
