@@ -103,12 +103,16 @@ class League(BaseApi):
 			else:
 				team_name = "Team name not available"
 
+			cust_score = team["custom_points"]
 			team_score = team["points"]
-			if team_score is None:
-				team_score = 0
+
+			if cust_score is not None:
+				team_score = cust_score
+			elif team_score is None:
+				team_score = 0				
 
 			team_score_tuple = (team_name, team_score)
-			
+
 			if matchup_id not in scoreboards_dict:
 				scoreboards_dict[matchup_id] = [team_score_tuple]
 			else:
