@@ -102,10 +102,10 @@ class League(BaseApi):
 				team_name = users_dict[owner_id]
 			else:
 				team_name = "Team name not available"
-
-			team_score = self.get_team_score(team["starters"], score_type, week)
-			if team_score is None:
-				team_score = 0
+			team_score = round(team["points"],2)
+			#team_score = self.get_team_score(team["starters"], score_type, week)
+			#if team_score is None:
+				#team_score = 0
 
 			team_score_tuple = (team_name, team_score)
 			if matchup_id not in scoreboards_dict:
