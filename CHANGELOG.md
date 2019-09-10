@@ -8,5 +8,8 @@
 - Added losses to standings
 - Updated documentation
 
-## Version 1.0.4
+## Version 1.0.6
 - Fixed scoreboards bug caused by sleeper api giving None as custom pts
+
+## Version 1.0.7
+- Fixed KeyError in the get_team_score() method.
