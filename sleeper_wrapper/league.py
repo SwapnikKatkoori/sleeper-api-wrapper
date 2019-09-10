@@ -111,7 +111,7 @@ class League(BaseApi):
 			elif team_score is None:
 				team_score = 0
 			else:
-				team_score = round(team_score,2)				
+				team_score = round(team_score,2)
 
 			team_score_tuple = (team_name, team_score)
 
