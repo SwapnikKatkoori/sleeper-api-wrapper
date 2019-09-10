@@ -131,7 +131,11 @@ class League(BaseApi):
 		week_stats = stats.get_week_stats("regular", 2019, week)
 		for starter in starters:
 			if stats.get_player_week_stats(week_stats, starter) is not None:
-				total_score += stats.get_player_week_stats(week_stats, starter)[score_type]
+				try:
+					total_score += stats.get_player_week_stats(week_stats, starter)[score_type]
+				except KeyError:
+					total_score += 0
+
 		return total_score
 
 	def empty_roster_spots(self):
