@@ -128,7 +128,8 @@ class League(BaseApi):
 	def get_team_score(self,starters, score_type, week):
 		total_score = 0
 		stats = Stats()
-		week_stats = stats.get_week_stats("regular", 2019, week)
+		season = self._league.get("season", 2019)
+		week_stats = stats.get_week_stats("regular", season, week)
 		for starter in starters:
 			if stats.get_player_week_stats(week_stats, starter) is not None:
 				try:
