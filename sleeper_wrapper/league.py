@@ -28,15 +28,15 @@ class League(BaseApi):
 	def get_transactions(self, week):
 		return self._call("{}/{}/{}".format(self._base_url,"transactions", week))
 
-    def get_trades(self, week)
+    def get_trades(self, week):
         transactions = self.get_transactions(week)
         return [t for t in transactions if t["type"] == "trade"]
 
-    def get_waivers(self, week)
+    def get_waivers(self, week):
         transactions = self.get_transactions(week)
         return [t for t in transactions if t["type"] == "waiver"]
 
-    def get_free_agents(self, week)
+    def get_free_agents(self, week):
         transactions = self.get_transactions(week)
         return [t for t in transactions if t["type"] == "free_agent"]
     
