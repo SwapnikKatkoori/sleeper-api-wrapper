@@ -9,11 +9,11 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="sleeper-api-wrapper",
-    version="1.0.7",
+    version="1.0.8",
     description="A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved.",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/SwapnikKatkoori/sleeper-api-wrapper",
+    url="https://github.com/RyanSowden/sleeper-api-wrapper.git",
     author="Swapnik Katkoori",
     author_email="katkoor2@msu.edu",
     license="MIT",
