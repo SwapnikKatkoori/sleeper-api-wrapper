@@ -13,7 +13,7 @@ setup(
     description="A Python API wrapper for Sleeper Fantasy Football, as well as tools to simplify data recieved.",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/RyanSowden/sleeper-api-wrapper.git",
+    url="https://github.com/SwapnikKatkoori/sleeper-api-wrapper",
     author="Swapnik Katkoori",
     author_email="katkoor2@msu.edu",
     license="MIT",
