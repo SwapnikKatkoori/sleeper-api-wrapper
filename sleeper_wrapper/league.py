@@ -128,7 +128,8 @@ class League(BaseApi):
 
 
                 #map roster_id to startes
-                lineups_dict = {}
+                lineups = []
+                names = []
                 for team in matchups:
                         matchup_id = team["matchup_id"]
                         current_roster_id = team["roster_id"]
@@ -143,13 +144,10 @@ class League(BaseApi):
                         if starters is None:
                                 starters = 0
 
-                        team_lineup_tuple = (team_name, starters)
-                        if matchup_id not in lineups_dict:
-                                lineups_dict[matchup_id] = [team_lineup_tuple]
-                        else:
-                                lineups_dict[matchup_id].append(team_lineup_tuple)
+                        lineups.append(starters)
+                        names.append(team_name)
 
-                return lineups_dict
+                return names,lineups
 
 
         def get_close_games(self, scoreboards, close_num):
