@@ -3,7 +3,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/SwapnikKatkoori/sleeper-api-wrapper.svg?color=orange)
 ![PyPI](https://img.shields.io/pypi/v/sleeper-api-wrapper)
 
-This repo is no longer actively maintained. @dtsong has created a new repo that will contain new updated for this project, please check it out: 
+This repo is no longer actively maintained. @dtsong has created a new repo that will contain new updates for this project, please check it out: 
 https://github.com/dtsong/sleeper-api-wrapper
 
 # sleeper-api-wrapper
