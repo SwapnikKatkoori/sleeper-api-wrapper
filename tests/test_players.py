@@ -6,6 +6,6 @@ def test_get_trending_players(capsys):
 
 	dropped = players.get_trending_players("nfl","drop")
 
-	# with capsys.disabled():
-	# 	print(added)
-	# 	print(dropped)
+	with capsys.disabled():
+		print(added)
+		print(dropped)
