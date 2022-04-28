@@ -1,6 +1,6 @@
 from sleeper_wrapper.base_api import BaseApi
 import json
-import os
+from pathlib import Path
 
 
 class Stats(BaseApi):
@@ -9,16 +9,40 @@ class Stats(BaseApi):
         self._projections_base_url = "https://api.sleeper.app/v1/projections/{}".format("nfl")
         self._full_stats = None
 
-    def get_all_stats(self, season_type, season):
-        path = 'data/stats/{}'.format(season)
-        if not os.path.exists(path):
-            # create a new directory to store the season stat json
-            os.makedirs(path)
+    def get_all_stats(self, season, season_type="regular"):
+        dir_path = Path(f'data/stats/{season}')
+        file_path = Path(f'data/stats/{season}/all_stats_{season}')
 
-        return os.path.exists(path)  # self._call("{}/{}/{}".format(self._base_url, season_type, season))
+        if dir_path.exists() and file_path.exists():
+            # if path and file are there, open local instance
+            print("Local path and file exists, reading local version")
+            with open(file_path) as json_file:
+                season_stats = json.load(json_file)
+        else:
+            # if path or file not there, do API call and store the JSON
+            print("local path and file not found, making API call")
+            dir_path.mkdir(parents=True, exist_ok=True)
+            season_stats = self._call("{}/{}/{}".format(self._base_url, season_type, season))
+            with open(file_path, 'w') as outfile:
+                json.dump(season_stats, outfile)
 
-    def get_week_stats(self, season_type, season, week):
-        return self._call("{}/{}/{}/{}".format(self._base_url, season_type, season, week))
+        return season_stats
+
+    def get_week_stats(self, season, week, season_type="regular"):
+        dir_path = Path(f'data/stats/{season}')
+        file_path = Path(f'data/stats/{season}/week_{week:02d}_stats_{season}')
+        if dir_path.exists() and file_path.exists():
+            with open(file_path) as json_file:
+                week_stats = json.load(json_file)
+        else:
+            # make API call if local JSON is not found
+            print("local path and file not found, making API call")
+            dir_path.mkdir(parents=True, exist_ok=True)
+            week_stats = self._call("{}/{}/{}/{}".format(self._base_url, season_type, season, week))
+            with open(file_path, 'w') as outfile:
+                json.dump(week_stats, outfile)
+
+        return week_stats
 
     def get_all_projections(self, season_type, season):
         return self._call("{}/{}/{}".format(self._projections_base_url, season_type, season))
@@ -57,3 +81,123 @@ class Stats(BaseApi):
                 result_dict["pts_half_ppr"] = None
 
         return result_dict
+
+    def get_custom_score(self, player_id, scoring_weights):
+        # TODO: need to change into method and test
+        # function to calculate customized score
+        # from scoring weights and stats list
+        score = 0.0
+
+        for k, v in scoring_weights.items():
+            try:
+                score += self[player_id][k] * scoring_weights[k]
+            except KeyError:
+                # pdb.set_trace()
+                pass
+
+        score = round(score, 2)
+
+        return score
+
+    def get_stats_range(self, year, start_week, stop_week, position_list=['QB', 'RB', 'WR', 'TE', 'DEF']):
+        # # TODO: need to change into method and test or add range to get_weekly_stats
+        # function to grab list of weekly stats from stats
+        # bring in stats.get_week_stats
+        # adds the custom score from the get_custom_score func
+
+        stats_list = []
+
+        for x in range(start_week, stop_week + 1):
+
+            current_week = stats.get_week_stats("regular", year, x)
+            trimmed_week = {}
+            # for loop to calculate the custom points
+            for player in current_week:
+                try:
+                    current_week[player]['pts_custom'] = get_custom_score(player, current_week, scoring_weights)
+                    # try to get position, name, team of current player - trim those that aren't in the position?
+                    current_week[player]['position'] = all_players[player]['position']
+                except:
+                    current_week[player]['position'] = 'TEAM'
+
+                # next try loop to get the player name
+                try:
+                    current_week[player]['name'] = all_players[player]['full_name']
+                except:
+                    try:
+                        current_week[player][
+                            'name'] = f"{all_players[player]['first_name']} {all_players[player]['last_name']}"
+                    except:
+                        current_week[player]['name'] = player
+
+                # now that we've added the position, we can add just the positions to the trim week
+                if current_week[player]['position'] in position_list:
+                    # pdb.set_trace()
+                    trimmed_week[player] = current_week[player]
+                else:
+                    pass
+
+            stats_list.append(trimmed_week)  # unsorted list returned
+
+        # time to sort the stats_list with OrderedDict
+        stats_sorted = []
+        for s in stats_list:
+            res = OrderedDict(
+                sorted(s.items(), key=lambda x: getitem(x[1], 'pts_custom'), reverse=True))
+            stats_sorted.append(res)
+
+        return stats_sorted
+
+    def add_weekly_rank(self, stats_sorted):
+        # TODO: convert to method and test
+        # get rank of player's weekly finish, add that to player dict
+        # add up score
+        for week in stats_sorted:
+            rank_counter = 0
+            for player in week:
+
+                rank_counter += 1
+                week[player]['weekly_rank'] = rank_counter
+                pos = week[player]['position']
+                week[player]['stud'] = 0
+                week[player]['start1'] = 0
+                week[player]['start2'] = 0
+                week[player]['bust'] = 0
+
+                if rank_counter in range(1, 4):
+                    # pdb.set_trace()
+                    week[player]['stud'] = 1
+                elif rank_counter in range(4, 13):
+                    week[player]['start1'] = 1
+                elif rank_counter in range(13, 25):
+                    week[player]['start2'] = 1
+                elif 'gp' in week[player].keys():
+                    week[player]['bust'] = 1
+                else:
+                    week[player]['bust'] = 0
+
+        return stats_sorted
+
+    def get_stats_totals(self, stats_sorted):
+        # TODO: convert to method and test
+        # take sorted stats list and add all columns
+        # goal is to return single dict ordered by column choice
+
+        totals_dict = {}
+
+        for week in stats_sorted:
+            for player in week:
+                if player not in totals_dict:
+                    totals_dict[player] = week[player]
+                else:
+                    for k, v in week[player].items():
+                        if k not in totals_dict[player]:
+                            totals_dict[player][k] = v
+                        elif (k == 'position') or (k == 'name'):
+                            # pdb.set_trace()
+                            pass
+                        else:
+                            totals_dict[player][k] += v
+
+        return totals_dict
+
