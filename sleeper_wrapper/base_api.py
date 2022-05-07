@@ -12,4 +12,4 @@ class BaseApi():
 			#return SleeperWrapperException("Empty value returned")
 
 		result = result_json_string.json()
-		return result;
+		return result

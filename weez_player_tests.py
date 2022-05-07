@@ -1,26 +1,16 @@
+import os
 from sleeper_wrapper import League, Players, Stats
 import time
 
 league_id = 650057741137690624
 league = League(league_id)
-league.get_league()
+weez_league = league.get_league()
 players = Players()
 stats = Stats()
 
-rosters = league.get_rosters()
 
-print(league.scoring_settings)
-print(league.name)
-print(league.settings)
+test_roster2 = league.get_rosters()
 
-for r in rosters:
-    print(r['team_name'])
-# time_func(players.get_all_players())
-# time_func(stats.get_all_stats(2020))
-
-# stats_2021 = stats.get_all_stats(2020)
-
-# week_1_2021 = stats.get_week_stats(2021, 1)
-
-# stats.get_custom_score(weez_league.scoring_settings)
-
+roster_keys = {}
+for roster in test_roster2:
+    print(roster.full_dict.keys())

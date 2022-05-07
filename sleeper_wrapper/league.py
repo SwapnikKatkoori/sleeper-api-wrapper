@@ -1,5 +1,15 @@
 from .base_api import BaseApi
 from .stats import Stats
+from argparse import Namespace
+
+class Roster:
+	def __init__(self, roster_dict):
+		self.team_name = roster_dict['team_name']
+		self.players = roster_dict['players']
+		self.owner_id = roster_dict['owner_id']
+		self.full_dict = roster_dict
+		self.taxi = roster_dict['taxi']
+		self.league_id = roster_dict['league_id']
 
 class League(BaseApi):
 	def __init__(self, league_id):
@@ -16,10 +26,14 @@ class League(BaseApi):
 		return self._league
 
 	def get_rosters(self):
-		rosters = self._call("{}/{}".format(self._base_url,"rosters"))
-		for roster in rosters:
-			roster['team_name'] = roster["owner_id"]
-		return rosters
+		roster_call = self._call("{}/{}".format(self._base_url,"rosters"))
+		user_map = self.map_users_to_team_name(self.get_users())
+		roster_list = []
+		for roster in roster_call:
+			roster['team_name'] = user_map[roster["owner_id"]]
+			new_roster = Roster(roster)
+			roster_list.append(new_roster)
+		return roster_list
 
 	def get_users(self):
 		return self._call("{}/{}".format(self._base_url,"users"))
