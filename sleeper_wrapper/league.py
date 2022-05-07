@@ -6,12 +6,20 @@ class League(BaseApi):
 		self.league_id = league_id
 		self._base_url = "https://api.sleeper.app/v1/league/{}".format(self.league_id)
 		self._league = self._call(self._base_url)
+		self.scoring_settings = self._league['scoring_settings']
+		self.name = self._league['name']
+		self.settings = self._league['settings']
 
 	def get_league(self):
+		# TODO: need to modify this so that everything returned in the dictionary is an attribute
+		# TODO: lookup SimpleNamespace
 		return self._league
 
 	def get_rosters(self):
-		return self._call("{}/{}".format(self._base_url,"rosters"))
+		rosters = self._call("{}/{}".format(self._base_url,"rosters"))
+		for roster in rosters:
+			roster['team_name'] = roster["owner_id"]
+		return rosters
 
 	def get_users(self):
 		return self._call("{}/{}".format(self._base_url,"users"))
