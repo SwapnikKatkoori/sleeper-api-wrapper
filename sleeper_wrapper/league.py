@@ -1,15 +1,23 @@
 from .base_api import BaseApi
 from .stats import Stats
-from argparse import Namespace
+
 
 class Roster:
 	def __init__(self, roster_dict):
 		self.team_name = roster_dict['team_name']
-		self.players = roster_dict['players']
+		self.players = roster_dict['players'] # list of player IDs
 		self.owner_id = roster_dict['owner_id']
 		self.full_dict = roster_dict
 		self.taxi = roster_dict['taxi']
 		self.league_id = roster_dict['league_id']
+		self.roster_id = roster_dict['roster_id']
+		self.starters = roster_dict["starters"]
+		self.settings = roster_dict["settings"]
+		self.reserve = roster_dict['reserve']
+		self.player_map = roster_dict["player_map"]
+		self.metadata = roster_dict["metadata"]
+		self.co_owners = roster_dict["co_owners"]
+
 
 class League(BaseApi):
 	def __init__(self, league_id):
@@ -21,8 +29,6 @@ class League(BaseApi):
 		self.settings = self._league['settings']
 
 	def get_league(self):
-		# TODO: need to modify this so that everything returned in the dictionary is an attribute
-		# TODO: lookup SimpleNamespace
 		return self._league
 
 	def get_rosters(self):
@@ -91,7 +97,7 @@ class League(BaseApi):
 		
 		return clean_standings_list
 
-	def map_rosterid_to_ownerid(self, rosters ):
+	def map_rosterid_to_ownerid(self, rosters):
 		"""returns: dict {roster_id:[owner_id,pts]} """
 		result_dict = {}
 		for roster in rosters:

@@ -3,6 +3,15 @@ import json
 from pathlib import Path
 
 
+class Player(object):
+    def __init__(self, *player_dict, **kwargs):
+        for dictionary in player_dict:
+            for key in dictionary:
+                setattr(self, key, dictionary[key])
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+
 class Players(BaseApi):
     def __init__(self):
         pass
@@ -22,29 +31,12 @@ class Players(BaseApi):
             with open(file_path, 'w') as outfile:
                 json.dump(all_players, outfile)
 
-        # on exception, do API call and store the JSON in data/players
-        """
-        except FileNotFoundError:
-            rel_path = "data/players/all_players.json"
-            with open(rel_path, 'w') as outfile:
-                json.dump(all_players, outfile)
-        """
-        return all_players
-
-    def get_saved_players(self):
-        with open('data/all_players.json') as json_file:
-            all_players = json.load(json_file)
-        return all_players
-
-    def save_all_players(self):
-
-        all_players = self._call("https://api.sleeper.app/v1/players/nfl")
-        rel_path = "data/all_players.json"
-
-        with open(rel_path, 'w') as outfile:
-            json.dump(all_players, outfile)
-
-        return all_players  # self._call("https://api.sleeper.app/v1/players/nfl")
+        player_dict = {}
+        for player in all_players:
+            cur_dict = all_players[player]
+            new_player = Player(cur_dict)
+            player_dict[player] = new_player
+        return player_dict
 
     def get_trending_players(self, sport, add_drop, hours=24, limit=25):
         return self._call(
