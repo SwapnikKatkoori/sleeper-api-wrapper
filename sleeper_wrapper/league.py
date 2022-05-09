@@ -2,6 +2,7 @@ from .base_api import BaseApi
 from .stats import Stats
 
 
+
 class Roster:
 	def __init__(self, roster_dict):
 		self.team_name = roster_dict['team_name']
@@ -17,6 +18,7 @@ class Roster:
 		self.player_map = roster_dict["player_map"]
 		self.metadata = roster_dict["metadata"]
 		self.co_owners = roster_dict["co_owners"]
+
 
 
 class League(BaseApi):

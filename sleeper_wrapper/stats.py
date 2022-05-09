@@ -1,8 +1,11 @@
+import pdb
+from collections import Counter, OrderedDict
 from sleeper_wrapper.base_api import BaseApi
-from sleeper_wrapper.players import Players
+from sleeper_wrapper.players import Players, Player
+from operator import getitem
 import json
 from pathlib import Path
-
+import pandas as pd
 
 class Stats(BaseApi):
     def __init__(self):
@@ -10,7 +13,10 @@ class Stats(BaseApi):
         self._projections_base_url = "https://api.sleeper.app/v1/projections/{}".format("nfl")
         self._full_stats = None
 
-    def get_all_stats(self, season, season_type="regular"):
+    def get_player_info(self):
+        pass
+
+    def get_yearly_stats(self, season, season_type="regular"):
         dir_path = Path(f'data/stats/{season}')
         file_path = Path(f'data/stats/{season}/all_stats_{season}')
 
@@ -18,16 +24,16 @@ class Stats(BaseApi):
             # if path and file are there, open local instance
             print("Local path and file exists, reading local version")
             with open(file_path) as json_file:
-                season_stats = json.load(json_file)
+                all_year_stats = json.load(json_file)
         else:
             # if path or file not there, do API call and store the JSON
             print("local path and file not found, making API call")
             dir_path.mkdir(parents=True, exist_ok=True)
-            season_stats = self._call("{}/{}/{}".format(self._base_url, season_type, season))
+            all_year_stats = self._call("{}/{}/{}".format(self._base_url, season_type, season))
             with open(file_path, 'w') as outfile:
-                json.dump(season_stats, outfile)
+                json.dump(all_year_stats, outfile)
 
-        return season_stats
+        return all_year_stats
 
     def get_week_stats(self, season, week, season_type="regular"):
         dir_path = Path(f'data/stats/{season}')
@@ -83,61 +89,58 @@ class Stats(BaseApi):
 
         return result_dict
 
-    def get_custom_score(self, player_id, scoring_weights):
-        # TODO: need to change into method and test
-        # function to calculate customized score
-        # from scoring weights and stats list
+    def get_custom_score(self, stats, scoring_settings):
+        # method to calculate customized score
+        # from scoring weights and stats dict
+        """
+        for player_id in stats:
+        """
         score = 0.0
-
-        for k, v in scoring_weights.items():
+        for k, v in scoring_settings.items():
             try:
-                score += self[player_id][k] * scoring_weights[k]
+                score += stats[k] * scoring_settings[k]
             except KeyError:
-                # pdb.set_trace()
                 pass
-
+        stats["pts_custom"] = round(score, 2)
         score = round(score, 2)
-
         return score
 
-    def get_stats_range(self, year, start_week, stop_week, position_list=['QB', 'RB', 'WR', 'TE', 'DEF']):
+    def get_stats_range(self, year, start_week, stop_week, scoring_settings,
+                        position_list=['QB', 'RB', 'WR', 'TE', 'DEF']):
         # # TODO: need to change into method and test or add range to get_weekly_stats
         # function to grab list of weekly stats from stats
         # bring in stats.get_week_stats
         # adds the custom score from the get_custom_score func
 
         stats_list = []
-
+        players = Players()
         for x in range(start_week, stop_week + 1):
-
-            current_week = stats.get_week_stats("regular", year, x)
+            current_week = self.get_week_stats(year, x)
+            # pdb.set_trace()
             trimmed_week = {}
             # for loop to calculate the custom points
             for player in current_week:
                 try:
-                    current_week[player]['pts_custom'] = get_custom_score(player, current_week, scoring_weights)
+                    current_week[player]['pts_custom'] = self.get_custom_score(current_week[player], scoring_settings)
                     # try to get position, name, team of current player - trim those that aren't in the position?
-                    current_week[player]['position'] = all_players[player]['position']
-                except:
+                    current_week[player]['position'] = players.all_players[player]['position']
+                except KeyError:
                     current_week[player]['position'] = 'TEAM'
-
                 # next try loop to get the player name
                 try:
-                    current_week[player]['name'] = all_players[player]['full_name']
-                except:
+                    current_week[player]['name'] = players.all_players[player]['full_name']
+                except KeyError:
                     try:
-                        current_week[player][
-                            'name'] = f"{all_players[player]['first_name']} {all_players[player]['last_name']}"
-                    except:
+                        current_week[player]['name'] = f"{players.all_players[player]['first_name']} " \
+                                                       f"{players.all_players[player]['last_name']}"
+                    except KeyError:
                         current_week[player]['name'] = player
-
                 # now that we've added the position, we can add just the positions to the trim week
                 if current_week[player]['position'] in position_list:
                     # pdb.set_trace()
                     trimmed_week[player] = current_week[player]
                 else:
                     pass
-
             stats_list.append(trimmed_week)  # unsorted list returned
 
         # time to sort the stats_list with OrderedDict
@@ -146,8 +149,8 @@ class Stats(BaseApi):
             res = OrderedDict(
                 sorted(s.items(), key=lambda x: getitem(x[1], 'pts_custom'), reverse=True))
             stats_sorted.append(res)
-
-        return stats_sorted
+        df = pd.DataFrame(stats_sorted)
+        return stats_sorted, df
 
     def add_weekly_rank(self, stats_sorted):
         # TODO: convert to method and test
@@ -201,4 +204,3 @@ class Stats(BaseApi):
                             totals_dict[player][k] += v
 
         return totals_dict
-
