@@ -17,7 +17,7 @@ class Player(object):
 
 class Players(BaseApi):
     def __init__(self):
-        all_players = self.get_all_players()
+        self.all_players = self.get_all_players()
         pass
 
     def get_all_players(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):

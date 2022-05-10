@@ -114,18 +114,22 @@ class Stats(BaseApi):
 
         stats_list = []
         players = Players()
+        df = pd.DataFrame()
+
         for x in range(start_week, stop_week + 1):
             current_week = self.get_week_stats(year, x)
             # pdb.set_trace()
             trimmed_week = {}
             # for loop to calculate the custom points
             for player in current_week:
+                # try block to get custom points
                 try:
                     current_week[player]['pts_custom'] = self.get_custom_score(current_week[player], scoring_settings)
                     # try to get position, name, team of current player - trim those that aren't in the position?
                     current_week[player]['position'] = players.all_players[player]['position']
                 except KeyError:
                     current_week[player]['position'] = 'TEAM'
+
                 # next try loop to get the player name
                 try:
                     current_week[player]['name'] = players.all_players[player]['full_name']
@@ -142,15 +146,16 @@ class Stats(BaseApi):
                 else:
                     pass
             stats_list.append(trimmed_week)  # unsorted list returned
-
+            # df = df.append(trimmed_week, ignore_index=True)
         # time to sort the stats_list with OrderedDict
         stats_sorted = []
+
         for s in stats_list:
             res = OrderedDict(
                 sorted(s.items(), key=lambda x: getitem(x[1], 'pts_custom'), reverse=True))
             stats_sorted.append(res)
-        df = pd.DataFrame(stats_sorted)
-        return stats_sorted, df
+
+        return stats_sorted, stats_list
 
     def add_weekly_rank(self, stats_sorted):
         # TODO: convert to method and test
