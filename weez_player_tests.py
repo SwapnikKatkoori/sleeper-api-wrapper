@@ -1,7 +1,6 @@
 from sleeper_wrapper import League, Players, Stats
-import time
 import pandas as pd
-
+from pandastable import Table
 league_id = 650057741137690624
 league = League(league_id)
 league.get_league()
@@ -9,8 +8,14 @@ players = Players()
 # all_players = players.get_all_players()
 stats = Stats()
 
+for rosters in league.rosters:
+    print(rosters.team_name)
+    for players in rosters.players:
+        print(players)
 
-print(players.all_players)
+
+
+# print(players.all_players)
 # players.check_cache()
 # stats.get_custom_score(stats_2019, league.scoring_settings)
 # stats.add_player_info(stats_2019)

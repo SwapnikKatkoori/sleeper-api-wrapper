@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-class Player(object):
+class Player:
     def __init__(self, *player_dict, **kwargs):
         for dictionary in player_dict:
             for key in dictionary:
@@ -11,16 +11,18 @@ class Player(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
         self.name = f"{self.first_name} {self.last_name}"
+
     def __str__(self):
-        return f"{self.name} {self.position} {self.team} {self.age}"
+        return f"{self.name}, {self.position} {self.team}"
 
 
 class Players(BaseApi):
-    def __init__(self):
-        self.all_players = self.get_all_players()
-        pass
+    def __init__(self, position_list=[]):
+        self.position_list = position_list
+        self.all_players = self.get_all_players(position_list)
 
-    def get_all_players(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):
+
+    def get_all_players(self, position_list):
         dir_path = Path('data/players')
         file_path = Path('data/players/all_players.json')
 
@@ -35,15 +37,19 @@ class Players(BaseApi):
             with open(file_path, 'w') as outfile:
                 json.dump(all_players, outfile)
 
-        players_dict = {}
-        for player in all_players:
-            cur_dict = all_players[player]
-            if cur_dict["position"] in position_list:
-                if cur_dict["team"] is not None:
-                    players_dict[player] = cur_dict
-            else:
-                pass
-        return players_dict
+        if position_list:
+            players_dict = {}
+            for player in all_players:
+                cur_dict = all_players[player]
+
+                if cur_dict["position"] in position_list:
+                    if cur_dict["team"] is not None:
+                        players_dict[player] = cur_dict
+                else:
+                    pass
+            return players_dict
+        else:
+            return all_players
 
     def get_trending_players(self, sport, add_drop, hours=24, limit=25):
         return self._call(

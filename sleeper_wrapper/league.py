@@ -1,12 +1,15 @@
+import pdb
+
 from .base_api import BaseApi
 from .stats import Stats
-
+from .players import Players, Player
+players = Players()
+all_players = players.all_players
 
 
 class Roster:
 	def __init__(self, roster_dict):
 		self.team_name = roster_dict['team_name']
-		self.players = roster_dict['players'] # list of player IDs
 		self.owner_id = roster_dict['owner_id']
 		self.full_dict = roster_dict
 		self.taxi = roster_dict['taxi']
@@ -18,7 +21,8 @@ class Roster:
 		self.player_map = roster_dict["player_map"]
 		self.metadata = roster_dict["metadata"]
 		self.co_owners = roster_dict["co_owners"]
-
+		self.roster_id_list = roster_dict["players"] # list of player IDs
+		self.players = roster_dict["player_obj_list"]
 
 
 class League(BaseApi):
@@ -29,18 +33,33 @@ class League(BaseApi):
 		self.scoring_settings = self._league['scoring_settings']
 		self.name = self._league['name']
 		self.settings = self._league['settings']
+		self.get_league()
+		self.rosters = self.get_rosters()
+
 
 	def get_league(self):
 		return self._league
+
 
 	def get_rosters(self):
 		roster_call = self._call("{}/{}".format(self._base_url,"rosters"))
 		user_map = self.map_users_to_team_name(self.get_users())
 		roster_list = []
+
 		for roster in roster_call:
 			roster['team_name'] = user_map[roster["owner_id"]]
+
+			new_player_list =[]
+			for player in roster["players"]:
+
+				new_player = Player(all_players[player])
+				new_player_list.append(new_player)
+			roster["player_obj_list"] = new_player_list
+
 			new_roster = Roster(roster)
 			roster_list.append(new_roster)
+
+
 		return roster_list
 
 	def get_users(self):
