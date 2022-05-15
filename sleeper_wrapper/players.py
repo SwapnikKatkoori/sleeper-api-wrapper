@@ -47,12 +47,12 @@ class Players(BaseApi):
         return all_players
 
     def make_player_objects(self, player_id_list):
-        players_dict = {}
+        players_list = []
         for player_id in player_id_list:
             cur_dict = self.all_players[player_id]
-            players_dict[player_id] = Player(cur_dict)
+            players_list.append(Player(cur_dict))
 
-        return players_dict
+        return players_list
 
     def get_trending_players(self, sport, add_drop, hours=24, limit=25):
         return self._call(

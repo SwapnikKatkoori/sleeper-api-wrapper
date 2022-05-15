@@ -2,7 +2,8 @@ from .base_api import BaseApi
 from .stats import Stats
 from .players import Players
 
-all_players=Players()
+all_players = Players()
+
 
 class Roster(Players):
 	def __init__(self, roster_dict):
@@ -21,7 +22,8 @@ class Roster(Players):
 		self.players = all_players.make_player_objects(self.player_id_list)
 
 	def __str__(self):
-		return f"{self.team_name}, {self.players}"
+		return f"{self.team_name}, {[str(player) for player in self.players]}"
+
 
 class League(BaseApi):
 	def __init__(self, league_id):
@@ -31,7 +33,7 @@ class League(BaseApi):
 		self.scoring_settings = self._league['scoring_settings']
 		self.name = self._league['name']
 		self.settings = self._league['settings']
-
+		self.rosters = self.get_rosters()
 
 	def __str__(self):
 		return f"{self.name}"
@@ -180,5 +182,3 @@ class League(BaseApi):
 	def get_negative_scores(self, week):
 		pass
 
-	def get_rosters_players(self):
-		pass

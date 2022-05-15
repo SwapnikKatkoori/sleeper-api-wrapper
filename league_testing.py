@@ -7,11 +7,9 @@ league_id = 650057741137690624
 league = League(league_id)
 # players = Players()
 
-rosters = league.get_rosters()
+print(league.rosters[0].players[0])
+
+for roster in league.rosters:
+    print(roster)
 
 
-key_errors = []
-for roster in rosters:
-    print(roster.players)
-
-print(key_errors)
