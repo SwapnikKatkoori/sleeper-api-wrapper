@@ -1,14 +1,14 @@
 from .base_api import BaseApi
 from .stats import Stats
+from .players import Players
 
+all_players=Players()
 
-
-class Roster:
+class Roster(Players):
 	def __init__(self, roster_dict):
 		self.team_name = roster_dict['team_name']
-		self.players = roster_dict['players'] # list of player IDs
+		self.player_id_list = roster_dict['players'] # list of player IDs
 		self.owner_id = roster_dict['owner_id']
-		self.full_dict = roster_dict
 		self.taxi = roster_dict['taxi']
 		self.league_id = roster_dict['league_id']
 		self.roster_id = roster_dict['roster_id']
@@ -18,8 +18,10 @@ class Roster:
 		self.player_map = roster_dict["player_map"]
 		self.metadata = roster_dict["metadata"]
 		self.co_owners = roster_dict["co_owners"]
+		self.players = all_players.make_player_objects(self.player_id_list)
 
-
+	def __str__(self):
+		return f"{self.team_name}, {self.players}"
 
 class League(BaseApi):
 	def __init__(self, league_id):
@@ -29,6 +31,10 @@ class League(BaseApi):
 		self.scoring_settings = self._league['scoring_settings']
 		self.name = self._league['name']
 		self.settings = self._league['settings']
+
+
+	def __str__(self):
+		return f"{self.name}"
 
 	def get_league(self):
 		return self._league

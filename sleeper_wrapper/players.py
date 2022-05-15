@@ -4,6 +4,16 @@ from pathlib import Path
 
 
 class Player(object):
+
+    # new init with bunching
+    def __init__(self, player_dict):
+        self.__dict__.update(player_dict)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}, {self.position} {self.team}"
+
+        """    
+    OLD init with dictionary comprehension
     def __init__(self, *player_dict, **kwargs):
         for dictionary in player_dict:
             for key in dictionary:
@@ -11,8 +21,7 @@ class Player(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
         self.name = f"{self.first_name} {self.last_name}"
-    def __str__(self):
-        return f"{self.name} {self.position} {self.team} {self.age}"
+        """
 
 
 class Players(BaseApi):
@@ -35,14 +44,14 @@ class Players(BaseApi):
             with open(file_path, 'w') as outfile:
                 json.dump(all_players, outfile)
 
+        return all_players
+
+    def make_player_objects(self, player_id_list):
         players_dict = {}
-        for player in all_players:
-            cur_dict = all_players[player]
-            if cur_dict["position"] in position_list:
-                if cur_dict["team"] is not None:
-                    players_dict[player] = cur_dict
-            else:
-                pass
+        for player_id in player_id_list:
+            cur_dict = self.all_players[player_id]
+            players_dict[player_id] = Player(cur_dict)
+
         return players_dict
 
     def get_trending_players(self, sport, add_drop, hours=24, limit=25):
