@@ -16,10 +16,11 @@ class Stats(BaseApi):
     def get_player_info(self):
         pass
 
-    def get_yearly_stats(self, season, season_type="regular"):
+    def get_yearly_stats(self, season, season_type="regular", position_list=["QB", "RB", "WR", "TE", "DEF", "K"]):
         dir_path = Path(f'data/stats/{season}')
         file_path = Path(f'data/stats/{season}/all_stats_{season}')
 
+        # if else statement to check if the yearly file is there or make the api call to store
         if dir_path.exists() and file_path.exists():
             # if path and file are there, open local instance
             print("Local path and file exists, reading local version")
@@ -60,7 +61,7 @@ class Stats(BaseApi):
     def get_player_week_stats(self, stats, player_id):
         try:
             return stats[player_id]
-        except:
+        except KeyError:
             return None
 
     def get_player_week_score(self, stats, player_id):
@@ -88,6 +89,7 @@ class Stats(BaseApi):
                 result_dict["pts_half_ppr"] = None
 
         return result_dict
+
 
     def get_custom_score(self, stats, scoring_settings):
         # method to calculate customized score

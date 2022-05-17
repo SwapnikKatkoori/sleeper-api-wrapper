@@ -26,17 +26,22 @@ class Roster(Players):
 
 
 class League(BaseApi):
-	def __init__(self, league_id):
+	def __init__(self, league_id=650057741137690624):
 		self.league_id = league_id
 		self._base_url = "https://api.sleeper.app/v1/league/{}".format(self.league_id)
 		self._league = self._call(self._base_url)
 		self.scoring_settings = self._league['scoring_settings']
-		self.name = self._league['name']
+		self.league_name = self._league['name']
 		self.settings = self._league['settings']
 		self.rosters = self.get_rosters()
 
 	def __str__(self):
-		return f"{self.name}"
+		# return f"{self.league_name}"
+		return f"{self.print_rosters()}"
+
+	def print_rosters(self):
+		for roster in self.rosters:
+			print(roster)
 
 	def get_league(self):
 		return self._league
