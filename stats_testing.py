@@ -4,19 +4,17 @@ import pandas as pd
 league = League()
 stats = Stats()
 
-stats_2021 = stats.get_yearly_stats(2021)
+stats_2021 = stats.get_year_stats(2021)
 
-stats_odict, stats_list = stats.get_stats_range(2021, 9, 11, league.scoring_settings, position_list=["RB"])
+# stats_odict, stats_list = stats.get_stats_range(2021, 9, 11, league.scoring_settings, position_list=["RB"])
 
-for p in stats_list:
-    key_set = set().union(*(p[player].keys() for player in p))
+# for p in stats_list:
+#     key_set = set().union(*(p[player].keys() for player in p))
 
-key_list = list(key_set)
+# key_list = list(key_set)
 
-key_list.sort()
+# key_list.sort()
 
-
-
-df = pd.json_normalize(stats_list)
+df = pd.DataFrame.from_dict(stats_2021, orient="index")
 # df = df.transpose()
-print(key_list)
+print(df.head(10))

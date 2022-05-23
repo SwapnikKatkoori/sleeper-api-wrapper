@@ -16,7 +16,7 @@ class Stats(BaseApi):
     def get_player_info(self):
         pass
 
-    def get_yearly_stats(self, season, season_type="regular", position_list=["QB", "RB", "WR", "TE", "DEF", "K"]):
+    def get_year_stats(self, season, season_type="regular", position_list=["QB", "RB", "WR", "TE", "DEF", "K"]):
         dir_path = Path(f'data/stats/{season}')
         file_path = Path(f'data/stats/{season}/all_stats_{season}')
 
