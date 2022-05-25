@@ -34,11 +34,11 @@ class Players(BaseApi):
         file_path = Path('data/players/all_players.json')
 
         if file_path.exists() and dir_path.exists():
-            print("Local path and file exists, reading local version")
+            print("Players Call: Local path and file exists, reading local version")
             with open(file_path) as json_file:
                 all_players = json.load(json_file)
         else:
-            print("local path and file not found, making API call")
+            print("Players Call: local path and file not found, making API call")
             dir_path.mkdir(parents=True, exist_ok=True)
             all_players = self._call("https://api.sleeper.app/v1/players/nfl")
             with open(file_path, 'w') as outfile:

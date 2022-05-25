@@ -5,19 +5,48 @@ from sleeper_wrapper import League, Stats, Players
 league_id = 650057741137690624
 league = League(league_id)
 league.get_league()
-players = Players()
+# players = Players()
 # all_players = players.get_all_players()
 stats = Stats()
-stats_2021 = stats.get_year_stats(2021)
-df = pd.DataFrame.from_dict(stats_2021, orient="index")
+
+# stats_2021 = stats.get_year_stats(season=2021, scoring_settings=league.scoring_settings, position_list=["RB"])
+# df = pd.DataFrame.from_dict(stats_2021, orient="index")
+col_list = ["name", "age", "position", "pts_custom", "ppg", "gp"]
+
+
+
+def get_position_listbox():
+    position_list = [position_listbox.get(i) for i in position_listbox.curselection()]
+    stats_2021 = stats.get_year_stats(season=2021, scoring_settings=league.scoring_settings, position_list=position_list)
+    df = pd.DataFrame.from_dict(stats_2021, orient="index")
+    col_list = ["name", "age", "position", "pts_custom", "ppg", "gp"]
+    df = df[col_list]
+    df = df.sort_values("pts_custom", ascending=False)
+    table = Table(table_frame, dataframe=stats.df, showtoolbar=True, showstatusbar=True)
+    table.autoResizeColumns()
+    table.show()
+
 
 # ------------- GUI SETUP ----------- #
 window = Tk()
 window.title("Sleeper Project")
-frame = Frame(window)
-frame.pack()
-table = Table(Frame, dataframe=df)
-table.pack()
+table_frame = Frame(window)
+table_frame.pack(fill=BOTH, expand=1, side="right")
+select_frame = Frame(window)
+select_frame.pack(side="left")
+temp_button = Button(select_frame, text="Temp", command=get_position_listbox)
+temp_button.pack()
+position_listbox = Listbox(select_frame, selectmode="multiple")
+position_listbox.pack()
+position_list = ["QB", "RB", "WR", "TE", "K", "DEF", "TEAM"]
+for p in range(len(position_list)):
+    position_listbox.insert(END, position_list[p])
+    position_listbox.itemconfig(p, bg="lime")
+
+table = Table(table_frame, dataframe=stats.df, showtoolbar=True, showstatusbar=True)
+table.autoResizeColumns()
+table.show()
+# table.pack()
 
 window.mainloop()
 
