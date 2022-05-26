@@ -42,7 +42,7 @@ class Players(BaseApi):
             dir_path.mkdir(parents=True, exist_ok=True)
             all_players = self._call("https://api.sleeper.app/v1/players/nfl")
             with open(file_path, 'w') as outfile:
-                json.dump(all_players, outfile)
+                json.dump(all_players, outfile, indent=4)
 
         return all_players
 
