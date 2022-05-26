@@ -1,9 +1,9 @@
 from sleeper_wrapper import League, Stats
-import pandas as pd
+# import pandas as pd
 
 league = League()
 # stats = Stats(2020, week_start=1, week_stop=16)
-stats = Stats(2018, week_start=2, scoring_settings=league.scoring_settings, position_list=["QB"])
+stats = Stats(2018, scoring_settings=league.scoring_settings, position_list=["QB"])
 # stats_2021 = stats.get_year_stats(2021)
 
 
@@ -19,5 +19,7 @@ print(len(stats.stats))
 # df = pd.DataFrame.from_dict(stats.stats, orient="index")
 # df sle= df.transpose()
 for p in stats.stats:
-    if "gp" in stats.stats[p]:
-        print(stats.stats[p])
+    #all_keys = {k for k, v in stats.stats[p].items()}
+    print(f"{stats.stats[p]['name']}")
+#for k in all_keys:
+#    print(k)

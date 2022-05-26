@@ -4,7 +4,7 @@ from sleeper_wrapper.players import Players
 from operator import getitem
 import json
 from pathlib import Path
-import pandas as pd
+# import pandas as pd
 
 
 class Stats(BaseApi):
@@ -72,30 +72,31 @@ class Stats(BaseApi):
     def get_week_stats(self):
         if not self.week_stop:
             self.week_stop = self.week_start
-        elif self.week_stop < self.week_start:
+
+        if self.week_stop < self.week_start:
             print("Sorry, end week is before start")
             return {}
-        else:
-            for week in range(self.week_start, self.week_stop+1):
-                dir_path = Path(f'data/stats/{self.season}')
-                file_path = Path(f'data/stats/{self.season}/week_{week:02d}_stats_{self.season}')
-                try:
-                    with open(file_path, "r") as json_file:
-                        self.stats = json.load(json_file)
-                except FileNotFoundError:
-                    print("local path and file not found, making API call")
-                    dir_path.mkdir(parents=True, exist_ok=True)
-                    self.stats = self._call(f"{self._base_url}/{self.season_type}/{self.season}/{week}")
-                    self.map_player_info()
-                    with open(file_path, 'w') as data_file:
-                        json.dump(self.stats, data_file, indent=4)
-                finally:
-                    self.trim_to_positions()
-                    self.get_custom_score()
-                    self.stats_list.append(self.stats)
 
-            self.stats = self.get_stats_totals()
-            self.stats = self.get_average_stats()
+        for week in range(self.week_start, self.week_stop+1):
+            dir_path = Path(f'data/stats/{self.season}')
+            file_path = Path(f'data/stats/{self.season}/week_{week:02d}_stats_{self.season}')
+            try:
+                with open(file_path, "r") as json_file:
+                    self.stats = json.load(json_file)
+            except FileNotFoundError:
+                print("local path and file not found, making API call")
+                dir_path.mkdir(parents=True, exist_ok=True)
+                self.stats = self._call(f"{self._base_url}/{self.season_type}/{self.season}/{week}")
+                self.map_player_info()
+                with open(file_path, 'w') as data_file:
+                    json.dump(self.stats, data_file, indent=4)
+            finally:
+                self.trim_to_positions()
+                self.get_custom_score()
+                self.stats_list.append(self.stats)
+
+        self.stats = self.get_stats_totals()
+        self.stats = self.get_average_stats()
         return self.stats
 
     def get_average_stats(self):
