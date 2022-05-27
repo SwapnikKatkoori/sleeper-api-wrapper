@@ -4,7 +4,7 @@ from sleeper_wrapper.players import Players
 from operator import getitem
 import json
 from pathlib import Path
-# import pandas as pd
+import pandas as pd
 
 
 class Stats(BaseApi):
@@ -12,6 +12,7 @@ class Stats(BaseApi):
         self.season = season
         self.season_type = season_type
         self.position_list = position_list
+        self.vbd_baselines = kwargs.get("vbd_baselines")
         self.scoring_settings = kwargs.get("scoring_settings")
         self.week_start = kwargs.get("week_start")
         self.week_stop = kwargs.get("week_stop")
@@ -20,33 +21,59 @@ class Stats(BaseApi):
         self._projections_base_url = "https://api.sleeper.app/v1/projections/{}".format("nfl")
         self._full_stats = None
         self.stats = self.get_stats()
-        # self.df = pd.DataFrame(self.stats_list)
+        self.df = pd.DataFrame(self.stats_list)
 
     def trim_to_positions(self):
-        self.stats = {k: v for k, v in self.stats.items() if self.stats[k]["position"] in self.position_list}
+        self.stats = {
+            k: v for k, v in self.stats.items()
+            if self.stats[k]["position"] in self.position_list and "gp" in self.stats[k].keys()
+        }
+
+    def add_pos_rank_custom(self, scoring_type):
+        # TODO: Fix this to get position ranks
+        list_to_sort = sorted([self.stats[p] for p in self.stats], key=lambda i: i[f"pts_{scoring_type}"], reverse=True)
+        rank_counter = 1
+        for players in list_to_sort:
+            players["pos_rank_custom"] = rank_counter
+            rank_counter += 1
+        print(list_to_sort)
+
+    def add_rank_custom(self, scoring_type):
+        # pdb.set_trace()
+        list_to_sort = sorted([self.stats[p] for p in self.stats], key=lambda i: i[f"pts_{scoring_type}"], reverse=True)
+        rank_counter = 1
+        for players in list_to_sort:
+            players[f"rank_{scoring_type}"] = rank_counter
+            rank_counter += 1
+
+    def add_vbd(self):
+        # compare player's score with X score at that position
+        # get baselines
+        self.vbd_baselines = {'RB': 24, 'QB': 24, 'WR': 36, 'TE': 12, 'K': 12, 'DEF': 12}
+        pass
+
 
     def map_player_info(self):
         # Adds player name, age and position to stats_dict json for saving
         players = Players()
         for player in self.stats:
             try:
-                self.stats[player]['name'] = players.all_players[player]['full_name']
-            except KeyError:
-                try:
-                    self.stats[player]['name'] = f"{players.all_players[player]['first_name']} " \
-                                                   f"{players.all_players[player]['last_name']}"
-                except KeyError:
-                    self.stats[player]['name'] = player
-            try:
                 self.stats[player]['position'] = players.all_players[player]['position']
             except KeyError:
                 self.stats[player]['position'] = "TEAM"
-            try:
-                self.stats[player]['age'] = players.all_players[player]['age']
-            except KeyError:
-                pass
 
-    def get_stats(self):
+            if self.stats[player]['position'] == "TEAM":
+                self.stats[player]['name'] = player  # assigns the TEAM_ key as the name
+                self.stats[player]['age'] = None
+            elif self.stats[player]['position'] == "DEF":
+                self.stats[player]['name'] = f"{players.all_players[player]['first_name']} " \
+                                             f"{players.all_players[player]['last_name']}"
+                self.stats[player]['age'] = None
+            else:
+                self.stats[player]['name'] = players.all_players[player]['full_name']
+                self.stats[player]['age'] = players.all_players[player]['age']
+
+    def get_stats(self) -> object:
         if self.week_start:
             return self.get_week_stats()
         else:
@@ -54,7 +81,7 @@ class Stats(BaseApi):
 
     def get_year_stats(self):
         dir_path = Path(f'data/stats/{self.season}')
-        file_path = Path(f'data/stats/{self.season}/all_stats_{self.season}')
+        file_path = Path(f'data/stats/{self.season}/all_stats_{self.season}.json')
         try:
             with open(file_path, "r") as data_file:
                 self.stats = json.load(data_file)
@@ -66,20 +93,22 @@ class Stats(BaseApi):
                 json.dump(self.stats, data_file, indent=4)
         finally:
             self.trim_to_positions()
-            self.get_custom_score()
+            if self.scoring_settings:
+                self.get_custom_score()
+                self.add_rank_custom("custom")
+            self.add_vbd()
         return self.stats
 
     def get_week_stats(self):
         if not self.week_stop:
             self.week_stop = self.week_start
-
         if self.week_stop < self.week_start:
             print("Sorry, end week is before start")
             return {}
 
         for week in range(self.week_start, self.week_stop+1):
             dir_path = Path(f'data/stats/{self.season}')
-            file_path = Path(f'data/stats/{self.season}/week_{week:02d}_stats_{self.season}')
+            file_path = Path(f'data/stats/{self.season}/week_{week:02d}_stats_{self.season}.json')
             try:
                 with open(file_path, "r") as json_file:
                     self.stats = json.load(json_file)
@@ -92,31 +121,35 @@ class Stats(BaseApi):
                     json.dump(self.stats, data_file, indent=4)
             finally:
                 self.trim_to_positions()
-                self.get_custom_score()
+                self.fix_empty_scores()
+                self.add_pos_rank("ppr")
+                self.add_pos_rank("std")
+                if self.scoring_settings:
+                    self.get_custom_score()
+                    self.add_pos_rank("custom")
+
                 self.stats_list.append(self.stats)
 
         self.stats = self.get_stats_totals()
-        self.stats = self.get_average_stats()
+        self.stats = self.get_stats_average()
         return self.stats
 
-    def get_average_stats(self):
-        exclude_keys = ["position", "name", "age", "gp", "gms_active"]
+    def get_stats_average(self):
+        exclude_keys = ["position", "name", "age", "gp", "gms_active", "pts_ppr", "pts_custom", "pos_rank_custom"]
         for p in self.stats:
-            try:
+            if "gp" in self.stats[p].keys():
                 games_played = self.stats[p]["gp"]
-            except KeyError:
-                pass
-            else:
                 for k, v in self.stats[p].items():
                     if type(v) == str or k in exclude_keys:
                         pass
                     else:
                         self.stats[p][k] = round(v / games_played, 2)
-
+            else:
+                pass
         return self.stats
 
     def get_stats_totals(self):
-        # TODO: convert to method and test
+        # TODO: work on keys to exclude from totalling
         # take sorted stats list and add all columns
         # goal is to return single dict ordered by column choice
         totals_dict = {}
@@ -128,17 +161,15 @@ class Stats(BaseApi):
                 else:
                     for k, v in week[player].items():
                         if k not in totals_dict[player]:
-                            totals_dict[player][k] = v
+                            totals_dict[player][k] = round(v, 2)
                         elif k in exclude_keys:
                             pass
                         else:
-                            totals_dict[player][k] += v
-
+                            totals_dict[player][k] += round(v, 2)
         return totals_dict
 
     def get_custom_score(self):
-        # method to calculate customized score
-        # from scoring weights and stats dict
+        # method to calculate customized score from league scoring settings
         if self.scoring_settings:
             for player in self.stats:
                 score = 0.0
@@ -155,30 +186,16 @@ class Stats(BaseApi):
         else:
             pass
 
-    def get_stats_range(self, year, start_week, stop_week, scoring_settings,
-                        position_list=['QB', 'RB', 'WR', 'TE', 'DEF']):
-        # # TODO: need to change into method and test or add range to get_weekly_stats
-        # function to grab list of weekly stats from stats
-        # bring in stats.get_week_stats
-        # adds the custom score from the get_custom_score func
-        stats_list = []
-        players = Players()
-        for x in range(start_week, stop_week + 1):
-            current_week = self.get_week_stats(year, x)
-            trimmed_week = {}
-            # for loop to calculate the custom points
-
-            stats_list.append(trimmed_week)  # unsorted list returned
-            # df = df.append(trimmed_week, ignore_index=True)
-        # time to sort the stats_list with OrderedDict
-        stats_sorted = []
-
-        for s in stats_list:
-            res = OrderedDict(
-                sorted(s.items(), key=lambda x: getitem(x[1], 'pts_custom'), reverse=True))
-            stats_sorted.append(res)
-
-        return stats_sorted, stats_list
+    def fix_empty_scores(self):
+        for p in self.stats:
+            if "pts_ppr" in self.stats[p].keys():
+                pass
+            else:
+                self.stats[p]["pts_ppr"] = 0.0
+            if "pts_std" in self.stats[p].keys():
+                pass
+            else:
+                self.stats[p]["pts_std"] = 0.0
 
     def get_all_projections(self, season_type, season):
         return self._call("{}/{}/{}".format(self._projections_base_url, season_type, season))
@@ -197,36 +214,36 @@ class Stats(BaseApi):
         result_dict = {}
         try:
             player_stats = stats[player_id]
-        except:
+        except KeyError:
             return None
 
         if stats:
             try:
                 result_dict["pts_ppr"] = player_stats["pts_ppr"]
-            except:
+            except KeyError:
                 result_dict["pts_ppr"] = None
 
             try:
                 result_dict["pts_std"] = player_stats["pts_std"]
-            except:
+            except KeyError:
                 result_dict["pts_std"] = None
 
             try:
                 result_dict["pts_half_ppr"] = player_stats["pts_half_ppr"]
-            except:
+            except KeyError:
                 result_dict["pts_half_ppr"] = None
 
+            try:
+                result_dict["pts_custom"] = player_stats["pts_custom"]
+            except KeyError:
+                result_dict["pts_custom"] = None
         return result_dict
-
-
 
     def check_local_cache(self):
         pass
 
     def delete_cache(self):
         pass
-
-
 
     def add_weekly_rank(self, stats_sorted):
         # TODO: convert to method and test
