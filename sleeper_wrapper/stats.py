@@ -122,11 +122,11 @@ class Stats(BaseApi):
             finally:
                 self.trim_to_positions()
                 self.fix_empty_scores()
-                self.add_pos_rank("ppr")
-                self.add_pos_rank("std")
+                self.add_rank_custom("ppr")
+                self.add_rank_custom("std")
                 if self.scoring_settings:
                     self.get_custom_score()
-                    self.add_pos_rank("custom")
+                    self.add_rank_custom("custom")
 
                 self.stats_list.append(self.stats)
 

@@ -1,3 +1,4 @@
+import pdb
 from tkinter import *
 import pandas as pd
 from pandastable import Table, TableModel, config
@@ -7,8 +8,11 @@ league = League(league_id)
 league.get_league()
 # players = Players()
 # all_players = players.get_all_players()
-stats = Stats(2021, week_start=1, week_stop=4, scoring_settings=league.scoring_settings)
+s = Stats(2021, scoring_settings=league.scoring_settings)
 
+for p in s.stats.items():
+    print(type(p[1]))
+pdb.set_trace()
 # stats_2021 = stats.get_year_stats(season=2021, scoring_settings=league.scoring_settings, position_list=["RB"])
 df = pd.DataFrame.from_dict(stats.stats, orient="index")
 col_list = ["name", "age", "position", "pts_custom", "ppg", "gp"]
