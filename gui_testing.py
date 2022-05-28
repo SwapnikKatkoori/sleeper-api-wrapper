@@ -8,14 +8,19 @@ league = League(league_id)
 league.get_league()
 # players = Players()
 # all_players = players.get_all_players()
-s = Stats(2021, scoring_settings=league.scoring_settings)
+stats = Stats(2021, week_start=1, week_stop=16, scoring_settings=league.scoring_settings, position_list=["WR"])
 
-for p in s.stats.items():
-    print(type(p[1]))
-pdb.set_trace()
-# stats_2021 = stats.get_year_stats(season=2021, scoring_settings=league.scoring_settings, position_list=["RB"])
-df = pd.DataFrame.from_dict(stats.stats, orient="index")
-col_list = ["name", "age", "position", "pts_custom", "ppg", "gp"]
+
+df = pd.DataFrame.from_dict(stats.average_dict, orient="index")
+df_cols = list(df)
+col_list = ["name", "age", "position", "vbd_custom",
+            "pts_custom", "rank_custom", "pos_rank_custom",
+            "pts_std", "rank_std",  "pos_rank_std",
+            "pts_ppr", "rank_ppr", "pos_rank_ppr",
+            "ppg", "gp", "total_gp", "total_gms_active",
+            "total_pts_ppr", "total_pts_custom", "total_pts_std"]
+# pdb.set_trace()
+df = df.loc[:, col_list]
 
 """
 def get_position_listbox():
