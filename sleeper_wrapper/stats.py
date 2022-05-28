@@ -83,7 +83,7 @@ class Stats(BaseApi):
                 self.add_pos_rank_custom()
                 self.get_vbd_baseline_players()
                 self.calc_vbd_score()
-
+                self.get_consistency_ranks()
         self.get_stats_totals()
         self.get_stats_average()
         # pdb.set_trace()
@@ -91,6 +91,9 @@ class Stats(BaseApi):
         # self.stats = self.get_stats_average()
         return self.stats
 
+    def get_consistency_ranks(self):
+
+        pass
     def get_stats_average(self):
         exclude_keys = ["position", "name", "age", "sleeper_id", "total_gp", "total_gms_active",
                         "total_pts_ppr", "total_pts_custom", "total_pts_std"]
@@ -128,12 +131,14 @@ class Stats(BaseApi):
                                 totals_dict[player][k] = round(v, 2)
         # pdb.set_trace()
         for p in totals_dict:
-            totals_dict[p]['total_gp'] = totals_dict[p]['gp']
-            totals_dict[p]["total_gms_active"] = totals_dict[p]['gms_active']
-            totals_dict[p]["total_pts_ppr"] = totals_dict[p]['pts_ppr']
-            totals_dict[p]["total_pts_custom"] = totals_dict[p]['pts_custom']
-            totals_dict[p]["total_pts_std"] = totals_dict[p]['pts_std']
-
+            try:
+                totals_dict[p]['total_gp'] = totals_dict[p]['gp']
+                totals_dict[p]["total_gms_active"] = totals_dict[p]['gms_active']
+                totals_dict[p]["total_pts_ppr"] = totals_dict[p]['pts_ppr']
+                totals_dict[p]["total_pts_custom"] = totals_dict[p]['pts_custom']
+                totals_dict[p]["total_pts_std"] = totals_dict[p]['pts_std']
+            except KeyError:
+                pass
         self.totals_dict = totals_dict
         # self.make_stats_list()
         return self.totals_dict
@@ -163,6 +168,7 @@ class Stats(BaseApi):
                         pos_rank_counter += 1
                     else:
                         pos_rank_counter = 1
+
         # print(self.stats_list)
         # pdb.set_trace()
 

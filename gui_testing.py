@@ -1,5 +1,6 @@
 import pdb
 from tkinter import *
+from tkinter import ttk
 import pandas as pd
 from pandastable import Table, TableModel, config
 from sleeper_wrapper import League, Stats, Players
@@ -8,32 +9,41 @@ league = League(league_id)
 league.get_league()
 # players = Players()
 # all_players = players.get_all_players()
-stats = Stats(2021, week_start=1, week_stop=16, scoring_settings=league.scoring_settings, position_list=["WR"])
-
+stats = Stats(2021, week_start=10, week_stop=18, scoring_settings=league.scoring_settings)
 
 df = pd.DataFrame.from_dict(stats.average_dict, orient="index")
 df_cols = list(df)
-col_list = ["name", "age", "position", "vbd_custom",
+col_list = ["vbd_custom",
             "pts_custom", "rank_custom", "pos_rank_custom",
             "pts_std", "rank_std",  "pos_rank_std",
             "pts_ppr", "rank_ppr", "pos_rank_ppr",
             "ppg", "gp", "total_gp", "total_gms_active",
-            "total_pts_ppr", "total_pts_custom", "total_pts_std"]
+            "total_pts_ppr", "total_pts_custom", "total_pts_std", "position", "age", "name"]
 # pdb.set_trace()
-df = df.loc[:, col_list]
+for cols in col_list:
+    col = df.pop(cols)
+    df.insert(0, col.name, col)
 
-"""
+
 def get_position_listbox():
-    position_list = [position_listbox.get(i) for i in position_listbox.curselection()]
-    
-    df = pd.DataFrame.from_dict(stats, orient="index")
-    col_list = ["name", "age", "position", "pts_custom", "ppg", "gp"]
-    df = df[col_list]
-    df = df.sort_values("pts_custom", ascending=False)
-    table = Table(table_frame, dataframe=stats.df, showtoolbar=True, showstatusbar=True)
+    position_listbox_selection = [position_listbox.get(i) for i in position_listbox.curselection()]
+    print(position_listbox_selection)
+    return position_listbox_selection
+
+def make_table(df):
+    table = Table(table_frame, dataframe=df, showtoolbar=True, showstatusbar=True)
     table.autoResizeColumns()
     table.show()
-"""
+
+def get_new_stats():
+    new_position_list = get_position_listbox()
+    year = int(year_combo.get())
+    week_start = int(week_start_combo.get())
+    week_stop = int(week_stop_combo.get())
+    new_stats = Stats(year=year, week_start=week_start, week_stop=week_stop, position_list=new_position_list,
+                      scoring_settings=league.scoring_settings)
+    new_df = pd.DataFrame.from_dict(new_stats.average_dict, orient="index")
+    make_table(new_df)
 
 # ------------- GUI SETUP ----------- #
 window = Tk()
@@ -42,20 +52,26 @@ table_frame = Frame(window)
 table_frame.pack(fill=BOTH, expand=1, side="right")
 select_frame = Frame(window)
 select_frame.pack(side="left")
-"""
-temp_button = Button(select_frame, text="Temp", command=get_position_listbox)
-temp_button.pack()
+get_button = Button(select_frame, text="Get Stats", command=get_new_stats)
+get_button.pack()
 
+year_combo = ttk.Combobox(select_frame, values=[n for n in range(2014, 2022)])
+year_combo.set("Year")
+year_combo.pack()
+week_start_combo = ttk.Combobox(select_frame, values=[n for n in range(1, 19)])
+week_start_combo.set("Start Week")
+week_start_combo.pack()
+week_stop_combo = ttk.Combobox(select_frame, values=[n for n in range(1, 19)])
+week_stop_combo.set("Stop Week")
+week_stop_combo.pack()
 position_listbox = Listbox(select_frame, selectmode="multiple")
 position_listbox.pack()
 position_list = ["QB", "RB", "WR", "TE", "K", "DEF", "TEAM"]
 for p in range(len(position_list)):
     position_listbox.insert(END, position_list[p])
-    position_listbox.itemconfig(p, bg="lime")
-"""
-table = Table(table_frame, dataframe=df, showtoolbar=True, showstatusbar=True)
-table.autoResizeColumns()
-table.show()
+    position_listbox.itemconfig(p)
+
+make_table(df)
 # table.pack()
 
 window.mainloop()
