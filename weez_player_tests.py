@@ -5,15 +5,15 @@ league_id = 650057741137690624
 league = League(league_id)
 league.get_league()
 players = Players()
-# all_players = players.get_all_players()
-stats = Stats()
+
+"""stats = Stats()
 
 for rosters in league.rosters:
     print(rosters.team_name)
     for players in rosters.players:
         print(players)
-
-
+"""
+# players.delete_cache()
 
 # print(players.all_players)
 # players.check_cache()

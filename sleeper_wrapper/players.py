@@ -26,22 +26,20 @@ class Player(object):
 
 class Players(BaseApi):
     def __init__(self):
+        self.dir_path = Path('data/players')
+        self.file_path = Path('data/players/all_players.json')
         self.all_players = self.get_all_players()
-        pass
 
     def get_all_players(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):
-        dir_path = Path('data/players')
-        file_path = Path('data/players/all_players.json')
-
-        if file_path.exists() and dir_path.exists():
+        if self.file_path.exists() and self.dir_path.exists():
             print("Players Call: Local path and file exists, reading local version")
-            with open(file_path) as json_file:
+            with open(self.file_path) as json_file:
                 all_players = json.load(json_file)
         else:
             print("Players Call: local path and file not found, making API call")
-            dir_path.mkdir(parents=True, exist_ok=True)
+            self.dir_path.mkdir(parents=True, exist_ok=True)
             all_players = self._call("https://api.sleeper.app/v1/players/nfl")
-            with open(file_path, 'w') as outfile:
+            with open(self.file_path, 'w') as outfile:
                 json.dump(all_players, outfile, indent=4)
 
         return all_players
@@ -55,13 +53,11 @@ class Players(BaseApi):
 
     def get_trending_players(self, sport, add_drop, hours=24, limit=25):
         return self._call(
-            "https://api.sleeper.app/v1/players/{}/trending/{}?lookback_hours={}&limit={}".format(sport, add_drop,
+            f"https://api.sleeper.app/v1/players/{sport}/trending/{add_drop}?lookback_hours={hours}&limit={limit}")
 
-                                                                                                     hours, limit))
     def check_cache(self):
+        print(f"Dir {self.dir_path} exists:  {self.dir_path.exists()}")
+        print(f"File {self.file_path} exists: {self.file_path.exists()}")
 
-        dir_path = Path('data/players')
-        file_path = Path('data/players/all_players.json')
-
-        print(f"Dir {dir_path} exists:  {dir_path.exists()}")
-        print(f"File {file_path} exists: {file_path.exists()}")
+    def delete_cache(self):
+        self.file_path.unlink()
