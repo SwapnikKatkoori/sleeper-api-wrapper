@@ -9,12 +9,16 @@ SCORING_TYPES = ["ppr", "std", "custom"]
 
 
 class Stats(BaseApi):
-    def __init__(self, season=2021, season_type="regular", position_list=["QB", "RB", "WR", "TE", "DEF", "K"], **kwargs):
+    def __init__(
+            self, season=2021, season_type="regular", position_list=["QB", "RB", "WR", "TE", "DEF", "K"],
+            projections=None, **kwargs):
         self.season = season
         self.season_type = season_type
         self.position_list = position_list
-        self.vbd_baseline_ranks = {'RB': 24, 'QB': 24, 'WR': 36, 'TE': 12, 'K': 12, 'DEF': 12}
-        self.vbd_baseline_scores = {}
+        self.vols_baseline_ranks = {'RB': 24, 'QB': 24, 'WR': 36, 'TE': 12, 'K': 12, 'DEF': 12}
+        self.vols_baseline_scores = {}
+        self.vorp_baseline_ranks = {'RB': 60, 'QB': 32, 'WR': 60, 'TE': 16, 'K': 12, 'DEF': 12}
+        self.vols_baseline_scores = {}
         self.scoring_settings = kwargs.get("scoring_settings")
         self.week_start = kwargs.get("week_start")
         self.week_stop = kwargs.get("week_stop")
@@ -25,6 +29,7 @@ class Stats(BaseApi):
         self._base_url = "https://api.sleeper.app/v1/stats/{}".format("nfl")
         self._projections_base_url = "https://api.sleeper.app/v1/projections/{}".format("nfl")
         self._full_stats = None
+        self.projections = projections
         self.stats = self.get_stats()
         self.df = pd.DataFrame(self.stats_list)
 
@@ -32,8 +37,16 @@ class Stats(BaseApi):
         if self.week_start:
             self.check_week_range()
             return self.get_week_stats()
+        elif self.projections:
+            self.get_projections()
         else:
             return self.get_year_stats()
+    def get_projections(self):
+        dir_path = Path("data/projections")
+        file_path = Path("data/projections/NFLDK2022_CS_ClayProjections2022.xlsx")
+
+        for pos in self.position_list:
+            pass
 
     def get_year_stats(self):
         dir_path = Path(f'data/stats/{self.season}')
@@ -54,8 +67,10 @@ class Stats(BaseApi):
                 self.get_custom_score()
                 self.add_rank_custom("custom")
                 self.add_pos_rank_custom("custom")
-            self.get_vbd_baseline_players()
-            self.calc_vbd_score()
+            self.get_vols_baseline_players()
+            self.calc_vols_score()
+            self.get_vorp_baseline_players()
+            self.calc_vorp_score()
         return self.stats
 
     def get_week_stats(self):
@@ -81,8 +96,10 @@ class Stats(BaseApi):
                     self.get_custom_score()
                 self.add_rank_custom()
                 self.add_pos_rank_custom()
-                self.get_vbd_baseline_players()
-                self.calc_vbd_score()
+                self.get_vols_baseline_players()
+                self.calc_vols_score()
+                self.get_vorp_baseline_players()
+                self.calc_vorp_score()
                 self.get_consistency_ranks()
         self.get_stats_totals()
         self.get_stats_average()
@@ -181,23 +198,49 @@ class Stats(BaseApi):
                 player[f"rank_{scoring_type}"] = rank_counter
                 rank_counter += 1
 
-    def get_vbd_baseline_players(self):
+    def get_vols_baseline_players(self):
         # compare player's score with X score at that position
         # get baselines
         for scoring_type in SCORING_TYPES:
-            v_dict = self.vbd_baseline_ranks
+            v_dict = self.vols_baseline_ranks
             for p in self.stats_list:
                 position = p["position"]
                 pos_rank_custom = p[f"pos_rank_{scoring_type}"]
                 if v_dict[position] == pos_rank_custom:
-                    self.vbd_baseline_scores[position] = p[f"pts_{scoring_type}"]
+                    self.vols_baseline_scores[position] = p[f"pts_{scoring_type}"]
                 else:
                     pass
 
-    def calc_vbd_score(self):
+    def calc_vols_score(self):
         for scoring_type in SCORING_TYPES:
-            v_ranks = self.vbd_baseline_ranks
-            v_scores = self.vbd_baseline_scores
+            v_ranks = self.vols_baseline_ranks
+            v_scores = self.vols_baseline_scores
+            for p in self.stats_list:
+                position = p["position"]
+                pos_rank = p[f"pos_rank_{scoring_type}"]
+                # pdb.set_trace()
+                if v_ranks[position] > pos_rank:
+                    p[f"vbd_{scoring_type}"] = p[f"pts_{scoring_type}"] - v_scores[position]
+                else:
+                    p[f"vbd_{scoring_type}"] = 0.0
+
+    def get_vorp_baseline_players(self):
+        # compare player's score with X score at that position
+        # get baselines
+        for scoring_type in SCORING_TYPES:
+            v_dict = self.vorp_baseline_ranks
+            for p in self.stats_list:
+                position = p["position"]
+                pos_rank_custom = p[f"pos_rank_{scoring_type}"]
+                if v_dict[position] == pos_rank_custom:
+                    self.vorp_baseline_scores[position] = p[f"pts_{scoring_type}"]
+                else:
+                    pass
+
+    def calc_vorp_score(self):
+        for scoring_type in SCORING_TYPES:
+            v_ranks = self.vorp_baseline_ranks
+            v_scores = self.vorp_baseline_scores
             for p in self.stats_list:
                 position = p["position"]
                 pos_rank = p[f"pos_rank_{scoring_type}"]
