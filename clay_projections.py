@@ -75,7 +75,7 @@ def add_vbd(df):
     df.sort_values(by="FF_Pt", ascending=False, inplace=True)
     df['vols'] = df.apply(calc_vols, axis=1)
     df['vorp'] = df.apply(calc_vorp, axis=1)
-    df['vons'] = df.FF_Pt.diff(periods=-1)
+    df['vona'] = df.FF_Pt.diff(periods=-1)
     df['vbd'] = df.apply(calc_vbd, axis=1)
     cols = df.columns.tolist()
     cols = cols[:6] + cols[-4:] + cols[7:-4]
