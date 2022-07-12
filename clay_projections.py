@@ -9,7 +9,7 @@ import json
 import requests
 from fuzzywuzzy import fuzz, process
 POS_LIST = ['QB', 'RB', 'WR', 'TE']
-
+import math
 
 def make_table(df):
     table = Table(table_frame, dataframe=df, showtoolbar=True, showstatusbar=True)
@@ -143,6 +143,9 @@ def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=2):
     return df_1
 
 
+def get_adp_round(row):
+    return int(math.ceil(row['adp_rank'] / 12))
+
 league = League()
 scoring = league.scoring_settings
 
@@ -159,20 +162,23 @@ te_df = cleanup_te_df(te_df)
 
 frames = [qb_df, wr_df, rb_df, te_df]
 all_df = pd.concat(frames)
-all_df.sort_values(by="vbd", ascending=False, inplace=True)
-# print(result.head(15))
+
+# make ADP dataframe
 
 adp_response = requests.get(url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&year=2022&position=all")
 adp_data = adp_response.json()
 adp_df = pd.DataFrame(adp_data['players'])
 adp_df.rename(columns={'name': 'Name', 'position': 'Pos', 'team': 'Team'}, inplace=True)
 adp_df['adp_rank'] = adp_df.index+1
+adp_df['adp_round'] = adp_df.apply(get_adp_round, axis=1)
+
+# sort for VBD and add vbd rank
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['vbd_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
-cols = all_df.columns.tolist()
-cols = cols[-1:] + cols[0:-1]  # + cols[7:-4]
-all_df = all_df[cols]
+# cols = all_df.columns.tolist()
+# cols = cols[-1:] + cols[0:-1]  # + cols[7:-4]
+# all_df = all_df[cols]
 
 all_df = fuzzy_merge(all_df, adp_df, "Name", "Name", 90)
 all_df = pd.merge(all_df, adp_df, left_on='matches', right_on='Name', how='left')
@@ -182,9 +188,9 @@ all_df = all_df.reset_index(drop=True)
 all_df['adp_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
 all_df['vbd_adp_diff'] = all_df['vbd_rank'] - all_df['adp_rank']
 
-cols = all_df.columns.tolist()
-cols = cols[-2:] + cols[0:11]  # + cols[7:-4]
-all_df = all_df[cols]
+# cols = all_df.columns.tolist()
+# cols = cols[-2:] + cols[0:11]  # + cols[7:-4]
+# all_df = all_df[cols]
 # cols = cols[-1:] + cols[0:11]
 
 
