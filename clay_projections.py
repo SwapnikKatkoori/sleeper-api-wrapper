@@ -130,7 +130,7 @@ def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=2):
     :param key2: key column of the right table
     :param threshold: how close the matches should be to return a match, based on Levenshtein distance
     :param limit: the amount of matches that will get returned, these are sorted high to low
-    :return: dataframe with boths keys and matches
+    :return: dataframe with both keys and matches
     """
     s = df_2[key2].tolist()
 
