@@ -146,7 +146,6 @@ class Stats(BaseApi):
                                 totals_dict[player][k] += round(v, 2)
                             except KeyError:
                                 totals_dict[player][k] = round(v, 2)
-        # pdb.set_trace()
         for p in totals_dict:
             try:
                 totals_dict[p]['total_gp'] = totals_dict[p]['gp']
@@ -157,7 +156,6 @@ class Stats(BaseApi):
             except KeyError:
                 pass
         self.totals_dict = totals_dict
-        # self.make_stats_list()
         return self.totals_dict
 
     def check_week_range(self):
