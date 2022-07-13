@@ -1,6 +1,10 @@
 #!/usr/bin/env python
+import pdb
+
 import PySimpleGUI as sg
 import csv
+import requests
+import numpy as np
 
 
 def TableSimulation():
@@ -18,23 +22,42 @@ def TableSimulation():
 
     MAX_ROWS = 16
     MAX_COL = 12
+    BOARD_LENGTH = MAX_ROWS*MAX_COL
+    RELIEF_ = "groove"
+    BG_COLORS = {"WR": "blue", "QB": "red", "RB": "green", "TE": "orange", "PK": "purple", "DEF": "brown", ".": "white"}
 
-    column_layout = [[sg.Text(f"Rd {str(i+1)}:", size=(6, 1), justification='right')] +
+    """
+    Get ADP Data and list of players, add empty items in the list with for loop to convert  to NP array
+    """
+    adp_response = requests.get(
+        url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&year=2022&position=all")
+    adp_data = adp_response.json()
+    adp_list = adp_data['players']
+    adp_list_length = len(adp_list)
+    for x in range(BOARD_LENGTH - adp_list_length):
+        adp_list.append({"name": "", "position": ".", "team": ""})
+    adp = np.array(adp_list)
+    adp = np.reshape(adp, (16, 12))
+    print(adp[0:15:2])
+    # pdb.set_trace()
+
+
+    column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(6, 1), justification='left')] +
                      [sg.Text(
-                         f"{j+1}",
+                         f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
                          size=(10,4),
-                         justification="center",
-                         key=(i, j)) for j in range(MAX_COL)]
-                     for i in range(MAX_ROWS)]
+                         justification="left",
+                         border_width=1,
+                         relief=RELIEF_,
+                         enable_events=True,
+                         background_color=BG_COLORS[adp[r,c]["position"]],
+                         key=(r, c)) for c in range(MAX_COL)]
+                     for r in range(MAX_ROWS)]
 
 
     layout = [[sg.Menu(menu_def)],
-              [sg.Text('Table Using Combos and Input Elements', font='Any 18')],
-              [sg.Text('Type in a row, column and value. The form will update the values in realtime as you type'),
-               sg.Input(key='inputrow', justification='right', size=(8, 1), pad=(1, 1)),
-               sg.Input(key='inputcol', size=(8, 1), pad=(1, 1), justification='right'),
-               sg.Input(key='value', size=(8, 1), pad=(1, 1), justification='right')],
-              [sg.Col(column_layout, size=(800, 600), scrollable=True,)]]
+              [sg.Text('Weez Draftboard', font='Any 18')],
+              [sg.Col(column_layout, size=(1600, 1200), scrollable=True,)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
 
