@@ -20,13 +20,14 @@ class Roster(Players):
 		self.metadata = roster_dict["metadata"]
 		self.co_owners = roster_dict["co_owners"]
 		self.players = all_players.make_player_objects(self.player_id_list)
+		self.roster = {self.team_name: [str(player) for player in self.players]}
 
 	def __str__(self):
 		return f"{self.team_name}, {[str(player) for player in self.players]}"
 
 
 class League(BaseApi):
-	def __init__(self, league_id=650057741137690624):
+	def __init__(self, league_id=850087629952249856):
 		self.league_id = league_id
 		self._base_url = "https://api.sleeper.app/v1/league/{}".format(self.league_id)
 		self._league = self._call(self._base_url)

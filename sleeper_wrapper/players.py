@@ -8,9 +8,9 @@ class Player(object):
     # new init with bunching
     def __init__(self, player_dict):
         self.__dict__.update(player_dict)
-
+        self.name_position = f"{self.first_name} {self.last_name}, {self.position} {self.team}"
     def __str__(self):
-        return f"{self.first_name} {self.last_name}, {self.position} {self.team}"
+        return f"{self.first_name} {self.last_name}"
 
         """    
     OLD init with dictionary comprehension

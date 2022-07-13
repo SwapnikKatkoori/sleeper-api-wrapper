@@ -1,14 +1,16 @@
 import pdb
 from pathlib import Path
 import pandas as pd
-from sleeper_wrapper import League
+from sleeper_wrapper import League, Drafts
 from tkinter import *
 from tkinter import ttk
 from pandastable import Table, TableModel, config
 import json
 import requests
 from fuzzywuzzy import fuzz, process
+import math
 POS_LIST = ['QB', 'RB', 'WR', 'TE']
+LEAGUE_ID = 850087629952249856
 
 
 def make_table(df):
@@ -143,10 +145,42 @@ def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=2):
     return df_1
 
 
-league = League()
-scoring = league.scoring_settings
+def get_adp_round(row):
+    return math.ceil(row['adp_rank'] / 12)
 
-pd.set_option('display.max_columns', None)
+
+def strip_names(df):
+    df['Name'] = df['Name'].str.replace(r'[^\w\s]+', '')
+    return df
+
+
+def get_keeper_values():
+    keeper_path = Path("data/keepers/keeper_values_2022.xlsx")
+    df = pd.read_excel(io=keeper_path)
+    df['player_name'] = df['player_name'].str.replace(r'[^\w\s]+', '')
+    return df
+
+
+def adp_keeper_round_diff(row):
+    try:
+        return int(row["draft_value_2022"]) - row["adp_round"]
+    except ValueError:
+        pass
+
+
+def vbd_expected_vbd_diff(row):
+    return row["vorp"] - row["Expected Value"]
+
+
+league = League(LEAGUE_ID)
+scoring = league.scoring_settings
+rosters = league.get_rosters()
+list_rosters_df = [pd.DataFrame(rosters[x].roster).melt() for x in range(12)]
+rosters_df = pd.concat(list_rosters_df)
+rosters_df.rename(columns={'variable': 'weez_team', 'value': 'Name'}, inplace=True)
+rosters_df = strip_names(rosters_df)
+
+
 file_path = Path("data/projections/NFLDK2022_CS_ClayProjections2022.xlsx")
 wr_df = pd.read_excel(io=file_path, sheet_name="WR")
 wr_df = cleanup_wr_df(wr_df)
@@ -159,6 +193,7 @@ te_df = cleanup_te_df(te_df)
 
 frames = [qb_df, wr_df, rb_df, te_df]
 all_df = pd.concat(frames)
+all_df = strip_names(all_df)
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 # print(result.head(15))
 
@@ -166,26 +201,48 @@ adp_response = requests.get(url="https://fantasyfootballcalculator.com/api/v1/ad
 adp_data = adp_response.json()
 adp_df = pd.DataFrame(adp_data['players'])
 adp_df.rename(columns={'name': 'Name', 'position': 'Pos', 'team': 'Team'}, inplace=True)
+adp_df = strip_names(adp_df)
 adp_df['adp_rank'] = adp_df.index+1
+# Match up expected VBD from Excel - TODO Need to add code from previous exercise
+adp_value_path = Path("data/adp/draft_value_chart.xlsx")
+adp_value_df = pd.read_excel(io=adp_value_path)
+adp_df = pd.merge(adp_df, adp_value_df, left_on="adp_rank", right_on="Pick", how="left")
+adp_df['adp_round'] = adp_df.apply(get_adp_round, axis=1)
+
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['vbd_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
-cols = all_df.columns.tolist()
-cols = cols[-1:] + cols[0:-1]  # + cols[7:-4]
-all_df = all_df[cols]
 
 all_df = fuzzy_merge(all_df, adp_df, "Name", "Name", 90)
 all_df = pd.merge(all_df, adp_df, left_on='matches', right_on='Name', how='left')
-
+all_df.rename(columns={"Name_x": "Name"}, inplace=True)
+all_df = fuzzy_merge(all_df, rosters_df, "Name", "Name", 90)
+all_df = pd.merge(all_df, rosters_df, left_on='matches', right_on='Name', how='left')
 all_df.sort_values(by="adp_rank", ascending=True, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['adp_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
 all_df['vbd_adp_diff'] = all_df['vbd_rank'] - all_df['adp_rank']
 
-cols = all_df.columns.tolist()
-cols = cols[-2:] + cols[0:11]  # + cols[7:-4]
-all_df = all_df[cols]
+
+keeper_df = get_keeper_values()
+all_df = pd.merge(all_df, keeper_df, left_on='matches', right_on='player_name', how='left')
+
+all_df["ADP - Keeper Round"] = all_df.apply(adp_keeper_round_diff, axis=1)
+all_df["VBD - Expected VBD"] = all_df.apply(vbd_expected_vbd_diff, axis=1)
+# cols = all_df.columns.tolist()
+# cols = cols[-2:] + cols[0:11]  # + cols[7:-4]
+# all_df = all_df[cols]
 # cols = cols[-1:] + cols[0:11]
+
+# Draft/Keeper Round
+
+
+# Get the Expected VBD/Rounds
+
+
+# average the expected VBD/Rounds
+
+
 
 
 
@@ -196,9 +253,6 @@ table_frame = Frame(window)
 table_frame.pack(fill=BOTH, expand=1, side="right")
 select_frame = Frame(window)
 select_frame.pack(side="left")
-# get_button = Button(select_frame, text="Get Stats", command=get_new_stats)
-# get_button.pack()
 make_table(all_df)
-# table.pack()
 
 window.mainloop()
