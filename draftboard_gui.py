@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import pdb
-
 import PySimpleGUI as sg
 import csv
 import requests
@@ -38,11 +37,10 @@ def TableSimulation():
         adp_list.append({"name": "", "position": ".", "team": ""})
     adp = np.array(adp_list)
     adp = np.reshape(adp, (16, 12))
-    print(adp[0:15:2])
+    adp[1::2, :] = adp[1::2, ::-1]
     # pdb.set_trace()
 
-
-    column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(6, 1), justification='left')] +
+    column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(5, 1), justification='left')] +
                      [sg.Text(
                          f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
                          size=(10,4),
@@ -57,7 +55,7 @@ def TableSimulation():
 
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18')],
-              [sg.Col(column_layout, size=(1600, 1200), scrollable=True,)]]
+              [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
 
