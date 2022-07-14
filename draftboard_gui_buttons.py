@@ -52,8 +52,18 @@ def TableSimulation():
     adp = np.reshape(adp, (16, 12))
     adp[1::2, :] = adp[1::2, ::-1]
 
-
+    # noinspection PyTypeChecker
     column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(5, 1), justification='left')] +
+                     [sg.B(
+                         button_text=f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
+                         enable_events=True,
+                         border_width=0,
+                         button_color= BG_COLORS[adp[r,c]["position"]],
+                         key=(r, c)
+                     )
+                         for c in range(MAX_COL)] for r in range(MAX_ROWS)]
+
+"""
                      [sg.Text(
                          text=f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
                          size=(10,4),
@@ -67,7 +77,7 @@ def TableSimulation():
                          key=(r, c)) for c in range(MAX_COL)]
                      for r in range(MAX_ROWS)]
 
-
+"""
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18')],
               [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
