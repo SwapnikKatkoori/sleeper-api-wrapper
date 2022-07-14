@@ -74,7 +74,7 @@ def TableSimulation():
               [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
-    down = False
+    down = True
     while True:
         event, values = window.read()
         # window[(0, 0)].bind('<Button-1>', key_modifier='background_color=gray', propagate=True)
@@ -83,9 +83,8 @@ def TableSimulation():
             break
         elif event in [(r, c) for c in range(MAX_COL) for r in range(MAX_ROWS)]:  # (range(MAX_COL), range(MAX_ROWS)): # == "<Button-1>":
             r, c = event
-            down = not down
             window[(r, c)].update(button_color='gray' if down else BG_COLORS[adp[r, c]["position"]])
-            # window[(r, c)].update(disabled=True if not window[(r, c)].disable  ==False else BG_COLORS[adp[r, c]["position"]])
+            down = not down
         """
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
