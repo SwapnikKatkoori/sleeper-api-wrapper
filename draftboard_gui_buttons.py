@@ -57,30 +57,19 @@ def TableSimulation():
                      [sg.B(
                          button_text=f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
                          enable_events=True,
+                         size=(10, 4),
                          border_width=0,
                          button_color= BG_COLORS[adp[r,c]["position"]],
+                         auto_size_button=True,
+                         mouseover_colors="gray",
+                         highlight_colors=("black", "white"),
                          key=(r, c)
                      )
                          for c in range(MAX_COL)] for r in range(MAX_ROWS)]
 
-"""
-                     [sg.Text(
-                         text=f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
-                         size=(10,4),
-                         justification="left",
-                         border_width=1,
-                         relief=RELIEF_,
-                         enable_events=True,
-                         background_color=BG_COLORS[adp[r,c]["position"]],
-                         # button_color=BG_COLORS[adp[r,c]["position"]],
-                         # disabled_button_color="grey",
-                         key=(r, c)) for c in range(MAX_COL)]
-                     for r in range(MAX_ROWS)]
-
-"""
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18')],
-              [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
+              [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
 

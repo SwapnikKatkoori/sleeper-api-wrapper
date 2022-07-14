@@ -67,7 +67,6 @@ def TableSimulation():
                          key=(r, c)) for c in range(MAX_COL)]
                      for r in range(MAX_ROWS)]
 
-
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18')],
               [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
