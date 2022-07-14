@@ -6,6 +6,9 @@ import requests
 import numpy as np
 
 
+
+def cell_clicked(event):
+    print("you clicked me")
 def TableSimulation():
     """
     Display data in a table format
@@ -60,9 +63,10 @@ def TableSimulation():
               [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
-    # window[(0,0)].bind('<Button-1>', key_modifier = 'background_color="gray"')
+
     while True:
         event, values = window.read()
+        # window[(0, 0)].bind('<Button-1>', key_modifier='background_color=gray', propagate=True)
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
@@ -95,8 +99,7 @@ def TableSimulation():
                                 target_element.update(new_value)
                         except:
                             pass
-        elif event == '<Button-1>':
-            sg.popup('Hi')
+
 
 
         # if a valid table location entered, change that location's value
