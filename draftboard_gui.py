@@ -24,7 +24,7 @@ def TableSimulation():
     BOARD_LENGTH = MAX_ROWS*MAX_COL
     RELIEF_ = "groove"
     BG_COLORS = {"WR": "blue", "QB": "red", "RB": "green", "TE": "orange", "PK": "purple", "DEF": "brown", ".": "white"}
-
+    # TODO Get better BG colors
     """
     Get ADP Data and list of players, add empty items in the list with for loop to convert  to NP array
     """
@@ -38,17 +38,19 @@ def TableSimulation():
     adp = np.array(adp_list)
     adp = np.reshape(adp, (16, 12))
     adp[1::2, :] = adp[1::2, ::-1]
-    # pdb.set_trace()
+
 
     column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(5, 1), justification='left')] +
                      [sg.Text(
-                         f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
+                         text=f"{adp[r, c]['name']}\n{adp[r,c]['position']}",
                          size=(10,4),
                          justification="left",
                          border_width=1,
                          relief=RELIEF_,
                          enable_events=True,
                          background_color=BG_COLORS[adp[r,c]["position"]],
+                         # button_color=BG_COLORS[adp[r,c]["position"]],
+                         # disabled_button_color="grey",
                          key=(r, c)) for c in range(MAX_COL)]
                      for r in range(MAX_ROWS)]
 
@@ -58,7 +60,7 @@ def TableSimulation():
               [sg.Col(column_layout, size=(800, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
-
+    # window[(0,0)].bind('<Button-1>', key_modifier = 'background_color="gray"')
     while True:
         event, values = window.read()
         # --- Process buttons --- #
@@ -93,6 +95,9 @@ def TableSimulation():
                                 target_element.update(new_value)
                         except:
                             pass
+        elif event == '<Button-1>':
+            sg.popup('Hi')
+
 
         # if a valid table location entered, change that location's value
         try:
