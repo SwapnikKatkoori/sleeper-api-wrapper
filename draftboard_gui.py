@@ -25,9 +25,15 @@ def TableSimulation():
     MAX_ROWS = 16
     MAX_COL = 12
     BOARD_LENGTH = MAX_ROWS*MAX_COL
-    RELIEF_ = "groove"
-    BG_COLORS = {"WR": "blue", "QB": "red", "RB": "green", "TE": "orange", "PK": "purple", "DEF": "brown", ".": "white"}
-    # TODO Get better BG colors
+    RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
+    BG_COLORS = {"WR": "DodgerBlue",
+                 "QB": "DeepPink",
+                 "RB": "LimeGreen",
+                 "TE": "coral",
+                 "PK": "lavender",
+                 "DEF": "sienna",
+                 ".": "white"}
+
     """
     Get ADP Data and list of players, add empty items in the list with for loop to convert  to NP array
     """
@@ -36,8 +42,12 @@ def TableSimulation():
     adp_data = adp_response.json()
     adp_list = adp_data['players']
     adp_list_length = len(adp_list)
-    for x in range(BOARD_LENGTH - adp_list_length):
-        adp_list.append({"name": "", "position": ".", "team": ""})
+    if len(adp_list) > 192:
+        for x in range(adp_list_length) - BOARD_LENGTH:
+            print(f"Removing item: {adp_list.pop(-1)}")
+    elif len(adp_list) < 192:
+        for x in range(BOARD_LENGTH - adp_list_length):
+            adp_list.append({"name": "", "position": ".", "team": ""})
     adp = np.array(adp_list)
     adp = np.reshape(adp, (16, 12))
     adp[1::2, :] = adp[1::2, ::-1]
