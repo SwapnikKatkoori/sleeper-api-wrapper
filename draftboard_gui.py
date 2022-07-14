@@ -43,7 +43,7 @@ def TableSimulation():
     adp_list = adp_data['players']
     adp_list_length = len(adp_list)
     if len(adp_list) > 192:
-        for x in range(adp_list_length) - BOARD_LENGTH:
+        for x in range(adp_list_length - BOARD_LENGTH):
             print(f"Removing item: {adp_list.pop(-1)}")
     elif len(adp_list) < 192:
         for x in range(BOARD_LENGTH - adp_list_length):
