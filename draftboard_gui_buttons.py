@@ -79,7 +79,7 @@ def TableSimulation():
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
-        elif event == "<Button-1>":
+        elif event in (range(MAX_COL), range(MAX_ROWS)): # == "<Button-1>":
             print("Button-1 Clicked")
         """
         elif event == 'About...':
