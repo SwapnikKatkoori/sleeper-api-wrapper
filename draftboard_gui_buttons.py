@@ -63,6 +63,8 @@ def TableSimulation():
                          auto_size_button=True,
                          mouseover_colors="gray",
                          highlight_colors=("black", "white"),
+                         disabled=False,
+                         disabled_button_color=(None, "gray"),
                          key=(r, c)
                      )
                          for c in range(MAX_COL)] for r in range(MAX_ROWS)]
@@ -72,15 +74,18 @@ def TableSimulation():
               [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
 
     window = sg.Window('Table', layout,  return_keyboard_events=True)
-
+    down = False
     while True:
         event, values = window.read()
         # window[(0, 0)].bind('<Button-1>', key_modifier='background_color=gray', propagate=True)
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
-        elif event in (range(MAX_COL), range(MAX_ROWS)): # == "<Button-1>":
-            print("Button-1 Clicked")
+        elif event in [(r, c) for c in range(MAX_COL) for r in range(MAX_ROWS)]:  # (range(MAX_COL), range(MAX_ROWS)): # == "<Button-1>":
+            r, c = event
+            down = not down
+            window[(r, c)].update(button_color='gray' if down else BG_COLORS[adp[r, c]["position"]])
+            # window[(r, c)].update(disabled=True if not window[(r, c)].disable  ==False else BG_COLORS[adp[r, c]["position"]])
         """
         elif event == 'About...':
             sg.popup('Demo of table capabilities')

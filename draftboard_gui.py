@@ -81,7 +81,7 @@ def TableSimulation():
             break
         elif event == "<Button-1>":
             print("Button-1 Clicked")
-        """
+
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Open':
@@ -123,7 +123,7 @@ def TableSimulation():
                 target_element.update(new_value)
         except:
             pass
-        """
+
     window.close()
 
 
