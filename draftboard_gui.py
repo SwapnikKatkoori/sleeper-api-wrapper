@@ -75,13 +75,20 @@ def TableSimulation():
 
     while True:
         event, values = window.read()
-        # window[(0, 0)].bind('<Button-1>', key_modifier='background_color=gray', propagate=True)
+
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
-        elif event == "<Button-1>":
-            print("Button-1 Clicked")
+        elif event in [(r, c) for c in range(MAX_COL) for r in range(MAX_ROWS)]:
+            r, c = event
 
+            # pdb.set_trace()
+            if 'gray' not in window[(r, c)].BackgroundColor:
+                window[(r, c)].update(background_color='gray')
+            else:
+                window[(r, c)].update(background_color=BG_COLORS[adp[r, c]["position"]])
+
+    """
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Open':
@@ -123,7 +130,7 @@ def TableSimulation():
                 target_element.update(new_value)
         except:
             pass
-
+    """
     window.close()
 
 
