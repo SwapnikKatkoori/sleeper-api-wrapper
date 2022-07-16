@@ -17,7 +17,8 @@ def TableSimulation():
     Display data in a table format
     """
 
-    sg.popup_quick_message('Hang on for a moment, this will take a bit to create....', auto_close=True, non_blocking=True, font='Default 18')
+    sg.popup_quick_message('Hang on for a moment, this will take a bit to create....', auto_close=True,
+                           non_blocking=True, font='Default 18')
 
     sg.set_options(element_padding=(0, 0))
 
@@ -27,7 +28,7 @@ def TableSimulation():
 
     MAX_ROWS = 16
     MAX_COL = 12
-    BOARD_LENGTH = MAX_ROWS*MAX_COL
+    BOARD_LENGTH = MAX_ROWS * MAX_COL
     RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
     BG_COLORS = {"WR": "DodgerBlue",
                  "QB": "DeepPink",
@@ -51,21 +52,29 @@ def TableSimulation():
         with open(file_path, "r") as data_file:
             adp_data = json.load(data_file)
     finally:
-        draft_list = adp_data['players']
-    adp_list_length = len(draft_list)
-    if len(draft_list) > 192:
+        adp_list = adp_data['players']
+    adp_list_length = len(adp_list)
+    if len(adp_list) > 192:
         for x in range(adp_list_length - BOARD_LENGTH):
-            print(f"Removing item: {draft_list.pop(-1)}")
-    elif len(draft_list) < 192:
+            print(f"Removing item: {adp_list.pop(-1)}")
+    elif len(adp_list) < 192:
         for x in range(BOARD_LENGTH - adp_list_length):
-            draft_list.append({"name": "", "position": ".", "team": ""})
+            adp_list.append({"name": "", "position": ".", "team": ""})
 
     """
-    Create draftboard (db) from numpy array of draft_list
+    Create draftboard (db) from numpy array of adp_list
     """
-    db = np.array(draft_list)
+
+    vbd_path = Path("data/vbd/vbd.json")
+    with open(vbd_path, "r") as data:
+        vbd_list = json.load(data)
+    vbd_list = vbd_list[:192]
+
+    db = np.array(adp_list)
     db = np.reshape(db, (16, 12))
     db[1::2, :] = db[1::2, ::-1]
+
+    empty_db = np.empty([16, 12])
 
     """
     Create JSON to store/read keepers
@@ -78,17 +87,16 @@ def TableSimulation():
     """
 
     # noinspection PyTypeChecker
-    column_layout = [[sg.Text(f"Rd {str(r+1)}:", size=(5, 1), justification='left')] +
+    column_layout = [[sg.Text(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
                      [sg.B(
-                         button_text=
-                         f"{db[r, c]['name'].split(' ', 1)[0]}\n"
-                         f"{db[r, c]['name'].split(' ', 1)[1]}\n"
-                         f"{db[r,c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}",
+                         button_text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                                     f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                                     f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}",
                          enable_events=True,
                          size=(14, 0),
                          p=(0, 0),
                          border_width=1,
-                         button_color=BG_COLORS[db[r,c]["position"]],
+                         button_color=BG_COLORS[db[r, c]["position"]],
                          mouseover_colors="gray",
                          highlight_colors=("black", "white"),
                          disabled=False,
@@ -100,21 +108,25 @@ def TableSimulation():
 
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
-                sg.Combo(
-                   values=[x['name'] for x in draft_list],
-                   default_value=draft_list[0]['name'],
+               sg.Combo(
+                   values=[x['name'] for x in adp_list],
+                   default_value=adp_list[0]['name'],
                    readonly=False,
                    size=(14, 10),
                    enable_events=True,
                    k='Keeper Combo'),
                sg.Text('Round'),
-               sg.Combo(values=[x+1 for x in range(16)]),
+               sg.Combo(values=[x + 1 for x in range(16)], default_value=1, key="-Keeper Round-"),
                sg.Text('Pick'),
-               sg.Combo(values=[x + 1 for x in range(12)]),
-               sg.Button('Set Keeper')],
-              [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
+               sg.Combo(values=[x + 1 for x in range(12)], default_value=1, key="-Keeper Pick-"),
+               sg.Button('Set Keeper'),
+               sg.Button('Load VBD', key="-Load-VBD-"),
+               sg.Button('Load ADP', key="-Load-ADP-"),
+               sg.Text('Search: '),
+               sg.Input(key='-Search-', enable_events=True)],
+            [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
 
-    window = sg.Window('Table', layout,  return_keyboard_events=True)
+    window = sg.Window('Table', layout, return_keyboard_events=True)
 
     while True:
         event, values = window.read()
@@ -122,13 +134,47 @@ def TableSimulation():
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
+        elif event == '-Search-':
+            search_text = window["-Search-"].get()
+            for c in range(MAX_COL):
+                for r in range(MAX_ROWS):
+                    if search_text == "":
+                        window[(r, c)].update(button_color=BG_COLORS[db[r, c]['position']])  # f"white on {BG_COLORS[db[r, c]['position']]}")
+                    elif search_text in window[(r, c)].get_text() and search_text != "":
+                        # print(window[(r, c)].get_text())
+                        # pdb.set_trace()
+                        window[(r, c)].update(button_color="yellow")
+
         elif event in [(r, c) for c in range(MAX_COL) for r in range(MAX_ROWS)]:
             r, c = event
             if 'gray' not in window[(r, c)].ButtonColor:
                 window[(r, c)].update(button_color='gray')
             else:
                 window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
-
+        elif event == "-Load-ADP-":
+            db = np.array(adp_list)
+            db = np.reshape(db, (16, 12))
+            db[1::2, :] = db[1::2, ::-1]
+            for c in range(MAX_COL):
+                for r in range(MAX_ROWS):
+                    window[(r, c)].update(
+                        button_color=BG_COLORS[db[r, c]["position"]],
+                        text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                             f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                             f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}"
+                    )
+        elif event == "-Load-VBD-":
+            db = np.array(vbd_list)
+            db = np.reshape(db, (16, 12))
+            db[1::2, :] = db[1::2, ::-1]
+            for c in range(MAX_COL):
+                for r in range(MAX_ROWS):
+                    window[(r, c)].update(
+                        button_color=BG_COLORS[db[r, c]["position"]],
+                        text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                             f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                             f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}"
+                    )
 
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
@@ -152,23 +198,39 @@ def TableSimulation():
                 for i, row in enumerate(data):
                     for j, item in enumerate(row):
                         location = (i, j)
-                        try:            # try the best we can at reading and filling the table
+                        try:  # try the best we can at reading and filling the table
                             target_element = window[location]
                             new_value = item
                             if target_element is not None and new_value != '':
                                 target_element.update(new_value)
                         except:
                             pass
+
         elif event == "Set Keeper":
+
             # if a valid table location entered, change that location's value
             try:
                 player_name = window['Keeper Combo'].get()
-                pdb.set_trace()
-                location = (int(values['inputrow']), int(values['inputcol']))
-                target_element = window[location]
-                new_value = values['value']
+                # print(player_name)
+                player_index = next((i for (i, d) in enumerate(adp_list) if d["name"] == player_name), None)
+                keeper_dict = adp_list.pop(player_index)
+                keeper_dict["keeper"] = True
+                keeper_dict["keeper_location"] = (int(values['-Keeper Round-']-1), int(values['-Keeper Pick-']-1))
+                adp_list.append(keeper_dict)
+                db = np.array(adp_list)
+                db = np.reshape(db, (16, 12))
+                db[1::2, :] = db[1::2, ::-1]
+                print(db)
+
+
+                # location = (int(values['inputrow']), int(values['inputcol']))
+                target_element = window[keeper_dict['keeper_location']]
+                new_value = f"{keeper_dict['name'].split(' ', 1)[0]}\n"\
+                            f"{keeper_dict['name'].split(' ', 1)[1]}\n"\
+                            f"{keeper_dict['position']} ({keeper_dict['team']}) {keeper_dict['bye']}"
                 if target_element is not None and new_value != '':
                     target_element.update(new_value)
+
             except:
                 pass
 
