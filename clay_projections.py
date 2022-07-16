@@ -9,8 +9,13 @@ import json
 import requests
 from fuzzywuzzy import fuzz, process
 import math
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 POS_LIST = ['QB', 'RB', 'WR', 'TE']
 LEAGUE_ID = 850087629952249856
+league = League(LEAGUE_ID)
+scoring = league.scoring_settings
 
 
 def make_table(df):
@@ -150,7 +155,11 @@ def get_adp_round(row):
 
 
 def strip_names(df):
-    df['Name'] = df['Name'].str.replace(r'[^\w\s]+', '')
+    try:
+        df['name'] = df['name'].str.replace(r'[^\w\s]+', '')
+    except KeyError:
+        df['Name'] = df['Name'].str.replace(r'[^\w\s]+', '')
+        df.rename(columns={'Name': 'name'}, inplace=True)
     return df
 
 
@@ -158,6 +167,7 @@ def get_keeper_values():
     keeper_path = Path("data/keepers/keeper_values_2022.xlsx")
     df = pd.read_excel(io=keeper_path)
     df['player_name'] = df['player_name'].str.replace(r'[^\w\s]+', '')
+    df.rename(columns={'player_name': 'name'}, inplace=True)
     return df
 
 
@@ -172,14 +182,19 @@ def vbd_expected_vbd_diff(row):
     return row["vorp"] - row["Expected Value"]
 
 
-league = League(LEAGUE_ID)
-scoring = league.scoring_settings
+def merge_dfs(df, df2):
+    cols_to_use = df2.columns.difference(df.columns)
+    df_merged = pd.merge(df, df2[cols_to_use], left_index=True, right_index=True, how='outer')
+    return df_merged
+
+
+"""
 rosters = league.get_rosters()
 list_rosters_df = [pd.DataFrame(rosters[x].roster).melt() for x in range(12)]
 rosters_df = pd.concat(list_rosters_df)
-rosters_df.rename(columns={'variable': 'weez_team', 'value': 'Name'}, inplace=True)
+rosters_df.rename(columns={'variable': 'weez_team', 'value': 'name'}, inplace=True)
 rosters_df = strip_names(rosters_df)
-
+"""
 
 file_path = Path("data/projections/NFLDK2022_CS_ClayProjections2022.xlsx")
 wr_df = pd.read_excel(io=file_path, sheet_name="WR")
@@ -200,24 +215,29 @@ all_df.sort_values(by="vbd", ascending=False, inplace=True)
 adp_response = requests.get(url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&year=2022&position=all")
 adp_data = adp_response.json()
 adp_df = pd.DataFrame(adp_data['players'])
-adp_df.rename(columns={'name': 'Name', 'position': 'Pos', 'team': 'Team'}, inplace=True)
+adp_df.rename(columns={'position': 'Pos', 'team': 'Team'}, inplace=True)
 adp_df = strip_names(adp_df)
 adp_df['adp_rank'] = adp_df.index+1
 # Match up expected VBD from Excel - TODO Need to add code from previous exercise
 adp_value_path = Path("data/adp/draft_value_chart.xlsx")
 adp_value_df = pd.read_excel(io=adp_value_path)
-adp_df = pd.merge(adp_df, adp_value_df, left_on="adp_rank", right_on="Pick", how="left")
+# pdb.set_trace()
+adp_df = pd.merge(adp_df, adp_value_df, left_on="adp_rank", right_on="Pick")  # merge_dfs(adp_df, adp_value_df)
+
+# pdb.set_trace()
 adp_df['adp_round'] = adp_df.apply(get_adp_round, axis=1)
 
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['vbd_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
 
-all_df = fuzzy_merge(all_df, adp_df, "Name", "Name", 90)
-all_df = pd.merge(all_df, adp_df, left_on='matches', right_on='Name', how='left')
-all_df.rename(columns={"Name_x": "Name"}, inplace=True)
-all_df = fuzzy_merge(all_df, rosters_df, "Name", "Name", 90)
-all_df = pd.merge(all_df, rosters_df, left_on='matches', right_on='Name', how='left')
+all_df = fuzzy_merge(all_df, adp_df, "name", "name", 90)
+# pdb.set_trace()
+all_df = merge_dfs(all_df, adp_df)  # pd.merge(all_df, adp_df, left_on='matches', right_on='Name', how='left')
+# all_df.rename(columns={"Name_x": "Name"}, inplace=True)
+# all_df = fuzzy_merge(all_df, rosters_df, "name", "name", 90)
+# all_df = merge_dfs(all_df, rosters_df)  # left_on='matches', right_on='Name', how='left')
+
 all_df.sort_values(by="adp_rank", ascending=True, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['adp_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
@@ -225,14 +245,43 @@ all_df['vbd_adp_diff'] = all_df['vbd_rank'] - all_df['adp_rank']
 
 
 keeper_df = get_keeper_values()
-all_df = pd.merge(all_df, keeper_df, left_on='matches', right_on='player_name', how='left')
+# all_df = pd.merge(all_df, keeper_df, left_on='matches', right_on='name', how='left')
 
-all_df["ADP - Keeper Round"] = all_df.apply(adp_keeper_round_diff, axis=1)
-all_df["VBD - Expected VBD"] = all_df.apply(vbd_expected_vbd_diff, axis=1)
-# cols = all_df.columns.tolist()
-# cols = cols[-2:] + cols[0:11]  # + cols[7:-4]
+# all_df["ADP - Keeper Round"] = all_df.apply(adp_keeper_round_diff, axis=1)
+# all_df["VBD - Expected VBD"] = all_df.apply(vbd_expected_vbd_diff, axis=1)
+all_df.rename(columns={"Name_x": "name"}, inplace=True)
+all_df.rename(columns={"Pos_x": "position"}, inplace=True)
+all_df.rename(columns={"Pos": "position"}, inplace=True)
+all_df.rename(columns={"Team_x": "team"}, inplace=True)
+all_df.rename(columns={"Team": "team"}, inplace=True)
+all_df.sort_values(by=["vbd", "FF_Pt"], ascending=[False, False], inplace=True)
+
+export_df = all_df
+
+print(export_df.head())
+export_df.to_json(path_or_buf="data/vbd/vbd.json", indent=4, orient="records")
+
+"""
+cols = all_df.columns.tolist()
+count = 0
+seen = set()
+uniq = []
+
+# cols = cols[:25] + cols[31:44] + cols[46:47] + cols[51:54] + cols[56:57] # + cols[7:-4]
+for item in cols:
+    if item not in seen:
+        print(f"index: {count}, {item}")
+        uniq.append(item)
+        seen.add(item)
+    else:
+        print(f"DUPE at index: {count}, {item}")
+    count += 1
+
 # all_df = all_df[cols]
-# cols = cols[-1:] + cols[0:11]
+# all_df = all_df[seen]
+
+# pdb.set_trace()
+"""
 
 # Draft/Keeper Round
 
