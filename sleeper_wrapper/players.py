@@ -8,9 +8,16 @@ class Player(object):
     # new init with bunching
     def __init__(self, player_dict):
         self.__dict__.update(player_dict)
+        for k in player_dict:
+            setattr(self, k, player_dict[k])
         self.name_position = f"{self.first_name} {self.last_name}, {self.position} {self.team}"
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
 
         """    
     OLD init with dictionary comprehension
