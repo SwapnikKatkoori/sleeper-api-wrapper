@@ -140,7 +140,7 @@ def TableSimulation():
     filter_tooltip = "Find player"
 
     # noinspection PyTypeChecker
-    column_layout = [[sg.Text(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
+    column_layout = [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
                      [sg.B(
                          button_text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
                                      f"{db[r, c]['name'].split(' ', 1)[1]}\n"
@@ -174,6 +174,46 @@ def TableSimulation():
                sg.Text('Pick'),
                sg.Combo(values=[x + 1 for x in range(12)], default_value=1, key="-Keeper Pick-"),
                sg.Button('Set Keeper'),
+    # -------FROM SCRATCH-------- #
+    col1 = sg.Column([
+        [sg.Frame('Draft Board: ', [[sg.T("  ", size=(5, 1), justification='left')] + [sg.B(button_text=draft_order[c+1], border_width=1, key=f"TEAM{c}", size=(14, 0)) for c in range(MAX_COL)]] + \
+        [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
+                     [sg.B(
+                         button_text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                                     f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                                     f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}",
+                         enable_events=True,
+                         size=(14, 0),
+                         p=(0, 0),
+                         border_width=1,
+                         button_color=BG_COLORS[db[r, c]["position"]],
+                         mouseover_colors="gray",
+                         highlight_colors=("black", "white"),
+                         disabled=False,
+                         # changed the disabled_button_color
+                         disabled_button_color="white on gray",
+                         auto_size_button=False,
+                         metadata={"is_clicked": False},
+                         key=(r, c)
+                     )
+                         for c in range(MAX_COL)] for r in range(MAX_ROWS)])]])
+    col2 = sg.Column([
+        [sg.Frame("Cheat Sheets: ", [sg.Multiline()])]])
+    layout = [[sg.Menu(menu_def)],
+              [sg.Text('Weez Draftboard', font='Any 18'),
+
+               sg.Button('Load VBD', key="-Load-VBD-"),
+               sg.Button('Load ADP', key="-Load-ADP-"),
+               sg.Button('Refresh', key="-Refresh-"),
+               sg.Combo(values=[f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in drafted_list],
+                        size=15,
+                        enable_events=True,
+                        key="-Drafted-"),
+               sg.Text('Search: '),
+               sg.Input(key='-Search-', enable_events=True, focus=True, tooltip=filter_tooltip)],
+              [col1, col2]]
+              # [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
+    
     
     """
     layout = [[sg.Menu(menu_def)],
