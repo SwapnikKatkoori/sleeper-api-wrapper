@@ -129,27 +129,6 @@ def cleanup_te_df(df):
     return df
 
 
-def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=2):
-    """
-    :param df_1: the left table to join
-    :param df_2: the right table to join
-    :param key1: key column of the left table
-    :param key2: key column of the right table
-    :param threshold: how close the matches should be to return a match, based on Levenshtein distance
-    :param limit: the amount of matches that will get returned, these are sorted high to low
-    :return: dataframe with both keys and matches
-    """
-    s = df_2[key2].tolist()
-
-    m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))
-    df_1['matches'] = m
-
-    m2 = df_1['matches'].apply(lambda x: ', '.join([i[0] for i in x if i[1] >= threshold]))
-    df_1['matches'] = m2
-
-    return df_1
-
-
 def get_adp_round(row):
     return math.ceil(row['adp_rank'] / 12)
 
@@ -164,9 +143,10 @@ def strip_names(df):
 
 
 def get_keeper_values():
-    keeper_path = Path("data/keepers/keeper_values_2022.xlsx")
+    keeper_path = Path("data/keepers/keeper_values_2022v2.xlsx")
     df = pd.read_excel(io=keeper_path)
-    df['player_name'] = df['player_name'].str.replace(r'[^\w\s]+', '')
+
+    df['name'] = df['name'].str.replace(r'[^\w\s]+', '')
     df.rename(columns={'player_name': 'name'}, inplace=True)
     return df
 
@@ -183,18 +163,12 @@ def vbd_expected_vbd_diff(row):
 
 
 def merge_dfs(df, df2):
+
     cols_to_use = df2.columns.difference(df.columns)
-    df_merged = pd.merge(df, df2[cols_to_use], left_index=True, right_index=True, how='outer')
+    df_merged = pd.merge(df, df2, left_on="matches", right_on="name", how='left')
+
     return df_merged
 
-
-"""
-rosters = league.get_rosters()
-list_rosters_df = [pd.DataFrame(rosters[x].roster).melt() for x in range(12)]
-rosters_df = pd.concat(list_rosters_df)
-rosters_df.rename(columns={'variable': 'weez_team', 'value': 'name'}, inplace=True)
-rosters_df = strip_names(rosters_df)
-"""
 
 file_path = Path("data/projections/NFLDK2022_CS_ClayProjections2022.xlsx")
 wr_df = pd.read_excel(io=file_path, sheet_name="WR")
@@ -207,7 +181,9 @@ te_df = pd.read_excel(io=file_path, sheet_name="TE")
 te_df = cleanup_te_df(te_df)
 
 frames = [qb_df, wr_df, rb_df, te_df]
+
 all_df = pd.concat(frames)
+pdb.set_trace()
 all_df = strip_names(all_df)
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 # print(result.head(15))
@@ -218,7 +194,7 @@ adp_df = pd.DataFrame(adp_data['players'])
 adp_df.rename(columns={'position': 'Pos', 'team': 'Team'}, inplace=True)
 adp_df = strip_names(adp_df)
 adp_df['adp_rank'] = adp_df.index+1
-# Match up expected VBD from Excel - TODO Need to add code from previous exercise
+# Match up Expected VBD from Excel - TODO Need to add code from previous exercise
 adp_value_path = Path("data/adp/draft_value_chart.xlsx")
 adp_value_df = pd.read_excel(io=adp_value_path)
 # pdb.set_trace()
@@ -227,10 +203,35 @@ adp_df = pd.merge(adp_df, adp_value_df, left_on="adp_rank", right_on="Pick")  # 
 # pdb.set_trace()
 adp_df['adp_round'] = adp_df.apply(get_adp_round, axis=1)
 
+
+def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=2):
+    """
+    :param df_1: the left table to join
+    :param df_2: the right table to join
+    :param key1: key column of the left table
+    :param key2: key column of the right table
+    :param threshold: how close the matches should be to return a match, based on Levenshtein distance
+    :param limit: the amount of matches that will get returned, these are sorted high to low
+    :return: dataframe with both keys and matches
+    """
+    try:
+        s = df_2[key2].tolist()
+
+        m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))
+        df_1['matches'] = m
+
+        m2 = df_1['matches'].apply(lambda x: ', '.join([i[0] for i in x if i[1] >= threshold]))
+        df_1['matches'] = m2
+    except:
+        pdb.set_trace()
+
+    return df_1
+
+
 all_df.sort_values(by="vbd", ascending=False, inplace=True)
 all_df = all_df.reset_index(drop=True)
 all_df['vbd_rank'] = all_df.index+1  # .rank(method='first', ascending=False)
-
+#pdb.set_trace()
 all_df = fuzzy_merge(all_df, adp_df, "name", "name", 90)
 # pdb.set_trace()
 all_df = merge_dfs(all_df, adp_df)  # pd.merge(all_df, adp_df, left_on='matches', right_on='Name', how='left')
@@ -245,7 +246,7 @@ all_df['vbd_adp_diff'] = all_df['vbd_rank'] - all_df['adp_rank']
 
 
 keeper_df = get_keeper_values()
-# all_df = pd.merge(all_df, keeper_df, left_on='matches', right_on='name', how='left')
+all_df = pd.merge(all_df, keeper_df, left_on='matches', right_on='name', how='left')
 
 # all_df["ADP - Keeper Round"] = all_df.apply(adp_keeper_round_diff, axis=1)
 # all_df["VBD - Expected VBD"] = all_df.apply(vbd_expected_vbd_diff, axis=1)
@@ -259,29 +260,10 @@ all_df.sort_values(by=["vbd", "FF_Pt"], ascending=[False, False], inplace=True)
 export_df = all_df
 
 print(export_df.head())
-export_df.to_json(path_or_buf="data/vbd/vbd.json", indent=4, orient="records")
-
-"""
-cols = all_df.columns.tolist()
-count = 0
-seen = set()
-uniq = []
-
-# cols = cols[:25] + cols[31:44] + cols[46:47] + cols[51:54] + cols[56:57] # + cols[7:-4]
-for item in cols:
-    if item not in seen:
-        print(f"index: {count}, {item}")
-        uniq.append(item)
-        seen.add(item)
-    else:
-        print(f"DUPE at index: {count}, {item}")
-    count += 1
-
-# all_df = all_df[cols]
-# all_df = all_df[seen]
-
-# pdb.set_trace()
-"""
+try:
+    export_df.to_json(path_or_buf="data/vbd/vbd.json", indent=4, orient="records")
+except:
+    print(all_df.columns)
 
 # Draft/Keeper Round
 

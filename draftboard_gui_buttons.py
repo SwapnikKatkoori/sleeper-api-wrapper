@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 import pdb
+import time
+
 import PySimpleGUI as sg
 import csv
 import requests
 import numpy as np
 from pathlib import Path
 import json
-
-
-def cell_clicked(event):
-    print("you clicked me")
-
+from sleeper_wrapper import Drafts, League
+from fpros import Projections
 
 def TableSimulation():
     """
@@ -30,13 +29,39 @@ def TableSimulation():
     MAX_COL = 12
     BOARD_LENGTH = MAX_ROWS * MAX_COL
     RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
-    BG_COLORS = {"WR": "DodgerBlue",
-                 "QB": "DeepPink",
-                 "RB": "LimeGreen",
-                 "TE": "coral",
-                 "PK": "purple",
-                 "DEF": "sienna",
+    BG_COLORS = {"WR": "white on DodgerBlue",
+                 "QB": "white on DeepPink",
+                 "RB": "white on LimeGreen",
+                 "TE": "white on coral",
+                 "PK": "white on purple",
+                 "DEF": "white on sienna",
                  ".": "white"}
+
+    """
+    Get League and user/map
+    """
+    league = League()
+    user_map = league.map_users_to_team_name()
+    """
+    Get all picks in sleeper draft
+    """
+    DRAFT_ID = 850087629952249857 # mock
+    DRAFT_ID_2022_WEEZ_LEAGUE = 850087629952249857  # 854953046042583040
+
+    draft = Drafts(DRAFT_ID)
+    draft_info = draft.get_specific_draft()
+
+    """
+    get draft order, map to the user names, and sort by the draft position
+    """
+    draft_order = draft_info['draft_order']
+    draft_order = [{v: user_map[k]} for k, v in draft_order.items()]
+    draft_order = sorted(draft_order, key=lambda d: list(d.keys()))
+    # ---- draft_order to be used to create labels above the draft board  -----#
+
+
+    drafted_list = draft.get_all_picks()
+
 
     """
     Get ADP Data and list of players, add empty items in the list with for loop to convert  to NP array
@@ -62,13 +87,41 @@ def TableSimulation():
             adp_list.append({"name": "", "position": ".", "team": ""})
 
     """
-    Create draftboard (db) from numpy array of adp_list
+    Create JSON to store/read keepers
     """
+    with open('data/keepers/keepers.json', 'r') as keeper_file:
+        keeper_list = json.load(keeper_file)
+    # removing all keepers in keeper_list from adp_list
+    for k in keeper_list:
+        k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
+        k['position'] = k['metadata']['position']
+        k['team'] = k['metadata']['team']
+        for i, d in enumerate(adp_list):
+            if d['name'].strip() == k['name'].strip():
+                k['bye'] = d['bye']
+                adp_list.pop(i)
+    # sorting the keeper list by the pick
+    keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
+    # inserting all keepers in keeper_list back into adp_list
+    for k in keeper_list:
+        adp_list.insert(k['pick_no']-1, k)
+    # print(keeper_list[0])
 
+    # pdb.set_trace()
+
+    """
+    Create draftboard (db) from numpy array of vbd_list
+    """
+    vbd_prj = Projections()
+    vbd_list = vbd_prj.dict
+    vbd_list = vbd_list[:192]
+    # pdb.set_trace()
+    """
     vbd_path = Path("data/vbd/vbd.json")
     with open(vbd_path, "r") as data:
         vbd_list = json.load(data)
     vbd_list = vbd_list[:192]
+    """
 
     db = np.array(adp_list)
     db = np.reshape(db, (16, 12))
@@ -76,15 +129,15 @@ def TableSimulation():
 
     empty_db = np.empty([16, 12])
 
-    """
-    Create JSON to store/read keepers
-    """
+
 
     """
     TODO: Map and create right-click menus,
     Sort by ADP or VBD or VOLS or VORP
     Create Keeper method
     """
+
+    filter_tooltip = "Find player"
 
     # noinspection PyTypeChecker
     column_layout = [[sg.Text(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
@@ -100,15 +153,16 @@ def TableSimulation():
                          mouseover_colors="gray",
                          highlight_colors=("black", "white"),
                          disabled=False,
-                         disabled_button_color=(None, "gray"),
+                         # changed the disabled_button_color
+                         disabled_button_color="white on gray",
                          auto_size_button=False,
+                         metadata={"is_clicked": False},
                          key=(r, c)
                      )
                          for c in range(MAX_COL)] for r in range(MAX_ROWS)]
-
-    layout = [[sg.Menu(menu_def)],
-              [sg.Text('Weez Draftboard', font='Any 18'),
-               sg.Combo(
+    """
+    remove from layout
+                   sg.Combo(
                    values=[x['name'] for x in adp_list],
                    default_value=adp_list[0]['name'],
                    readonly=False,
@@ -120,35 +174,92 @@ def TableSimulation():
                sg.Text('Pick'),
                sg.Combo(values=[x + 1 for x in range(12)], default_value=1, key="-Keeper Pick-"),
                sg.Button('Set Keeper'),
+    
+    """
+    layout = [[sg.Menu(menu_def)],
+              [sg.Text('Weez Draftboard', font='Any 18'),
+
                sg.Button('Load VBD', key="-Load-VBD-"),
                sg.Button('Load ADP', key="-Load-ADP-"),
+               sg.Button('Refresh', key="-Refresh-"),
+               sg.Combo(values=[f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in drafted_list],
+                        size=15,
+                        enable_events=True,
+                        key="-Drafted-"),
                sg.Text('Search: '),
-               sg.Input(key='-Search-', enable_events=True)],
+               sg.Input(key='-Search-', enable_events=True, focus=True, tooltip=filter_tooltip)],
             [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
 
-    window = sg.Window('Table', layout, return_keyboard_events=True)
+    window = sg.Window('Table', layout, return_keyboard_events=True, resizable=True)
 
     while True:
-        event, values = window.read()
+        event, values = window.read(timeout=1000)
 
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
+        elif event in ("-Refresh-", sg.TIMEOUT_KEY):
+            drafted = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
+            window["-Drafted-"].update(values=drafted)
+            # for loop to set the drafted players as "clicked"
+            for c in range(MAX_COL):
+                for r in range(MAX_ROWS):
+                    cur_player_name = window[(r, c)].get_text()
+                    cur_player_name = cur_player_name.replace("\n", " ")
+                    for players in drafted:
+
+                        if players in cur_player_name:
+                            window[(r, c)].metadata["is_clicked"] = True
+                            window[(r, c)].update(button_color='white on gray')
+                        else:
+                            pass
+
         elif event == '-Search-':
-            search_text = window["-Search-"].get()
+            search_text = values["-Search-"].lower()
             for c in range(MAX_COL):
                 for r in range(MAX_ROWS):
                     if search_text == "":
-                        window[(r, c)].update(button_color=BG_COLORS[db[r, c]['position']])  # f"white on {BG_COLORS[db[r, c]['position']]}")
-                    elif search_text in window[(r, c)].get_text() and search_text != "":
-                        # print(window[(r, c)].get_text())
-                        # pdb.set_trace()
-                        window[(r, c)].update(button_color="yellow")
+                        if window[(r, c)].metadata["is_clicked"]:
+                            window[(r, c)].update(button_color='white on gray')
+                        else:
+                            window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
+                    elif search_text in window[(r, c)].get_text().lower():
+                        window[(r, c)].update(button_color="black on yellow")
+                    else:
+                        if window[(r, c)].metadata["is_clicked"]:
+                            window[(r, c)].update(button_color='white on gray')
+                        else:
+                            window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
 
+
+
+        elif event == '-Drafted-':
+            pass
+            """
+            search_text = values["-Drafted-"].lower()
+            for player in drafted_list:
+                # pdb.set_trace()
+                for c in range(MAX_COL):
+                    for r in range(MAX_ROWS):
+                        if player in window[(r, c)].get_text().lower():
+                            window[(r, c)].update(button_color="gray")
+                        else:
+                            pdb.set_trace()
+                        
+                        button_reset_color = f"white on {BG_COLORS[db[r, c]['position']]}"
+                        if search_text == "":
+                            window[(r, c)].update(button_color=button_reset_color)
+                        elif search_text in window[(r, c)].get_text().lower():
+                            window[(r, c)].update(button_color="gray")
+                        else:
+                            window[(r, c)].update(button_color=button_reset_color)"""
+
+        # click on button event
         elif event in [(r, c) for c in range(MAX_COL) for r in range(MAX_ROWS)]:
             r, c = event
-            if 'gray' not in window[(r, c)].ButtonColor:
-                window[(r, c)].update(button_color='gray')
+            window[(r, c)].metadata["is_clicked"] = not window[(r, c)].metadata["is_clicked"]
+            if window[(r, c)].metadata["is_clicked"]:
+                window[(r, c)].update(button_color='white on gray')
             else:
                 window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
         elif event == "-Load-ADP-":
@@ -169,12 +280,22 @@ def TableSimulation():
             db[1::2, :] = db[1::2, ::-1]
             for c in range(MAX_COL):
                 for r in range(MAX_ROWS):
-                    window[(r, c)].update(
-                        button_color=BG_COLORS[db[r, c]["position"]],
-                        text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
-                             f"{db[r, c]['name'].split(' ', 1)[1]}\n"
-                             f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}"
-                    )
+                    try:
+                        window[(r, c)].update(
+                            button_color=BG_COLORS[db[r, c]["position"]],
+                            text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                                 f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                                 f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}"
+                        )
+                    except KeyError:
+                        window[(r, c)].update(
+                            button_color=BG_COLORS[db[r, c]["position"]],
+                            text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
+                                 f"{db[r, c]['name'].split(' ', 1)[1]}\n"
+                                 f"{db[r, c]['position']} ({db[r, c]['team']})"
+                        )
+                    except AttributeError:
+                        pdb.set_trace()
 
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
@@ -233,7 +354,14 @@ def TableSimulation():
 
             except:
                 pass
+    try:
+        print(draft.get_all_picks())
+        drafted_list = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
+        print(drafted_list[-1])
+    except:
+        pdb.set_trace()
 
+    # window["-Drafted-"].update(values=drafted_list)
     window.close()
 
 
