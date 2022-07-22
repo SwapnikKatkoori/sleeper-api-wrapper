@@ -1,31 +1,42 @@
 """
-Cleanup projections from fantasypros
+Get projections and rankings from fantasypros.
 """
 import pdb
 import re
 import pandas as pd
 from pathlib import Path
-from sleeper_wrapper import League
+from sleeper_wrapper import League, Players
 import json
 
 league = League()
+players = Players()
+players = players.get_all_players()
+"""
+
+"""
+
 
 class Projections:
     def __init__(self, scoring_keys=league.scoring_settings):
-        self.qb_path = Path("data/projections/fpros/FantasyPros_Fantasy_Football_Projections_QB.csv")
-        self.flex_path = Path("data/projections/fpros/FantasyPros_Fantasy_Football_Projections_FLX.csv")
+        self.qb_path = Path("data/fpros/FantasyPros_Fantasy_Football_Projections_QB.csv")
+        self.flex_path = Path("data/fpros/FantasyPros_Fantasy_Football_Projections_FLX.csv")
         self.scoring_keys = scoring_keys
         self.qb_df = self.clean_qb_df()
         self.flex_df, self.rb_df, self.wr_df, self.te_df = self.clean_flex_df()
+        self.ecr_df = self.get_ecr_rankings()
         self.all_df = self.get_all_df()
         self.dict = self.all_df.to_dict("records")
 
     def get_all_df(self):
         all_df = pd.concat([self.qb_df, self.rb_df, self.wr_df, self.te_df]).fillna(0)
+        all_df.drop(all_df[all_df['name'] == 0].index, inplace=True)
         all_df = self.sort_reset_index(all_df)
         all_df.sort_values(by="vbd", ascending=False, inplace=True)
         all_df.reset_index(drop=True, inplace=True)
-        all_df["overall_rank"] = all_df.index + 1
+        all_df["overall_vbd_rank"] = all_df.index + 1
+        all_df = pd.merge(all_df, self.ecr_df, how="left", on="name", suffixes=('', '_y'))
+        all_df.drop(all_df.filter(regex='_y$').columns, axis=1, inplace=True)
+        all_df = self.get_sleeper_ids(all_df)
         return all_df
 
     def sort_reset_index(self, df):
@@ -124,10 +135,10 @@ class Projections:
                 vols_threshold = df.iloc[25]['fpts']
                 vorp_threshold = df.iloc[31]['fpts']
             elif df.iloc[1]['position'] == 'RB':
-                vols_threshold = df.iloc[33]['fpts']
+                vols_threshold = df.iloc[25]['fpts']
                 vorp_threshold = df.iloc[55]['fpts']
             elif df.iloc[1]['position'] == 'WR':
-                vols_threshold = df.iloc[27]['fpts']
+                vols_threshold = df.iloc[25]['fpts']
                 vorp_threshold = df.iloc[63]['fpts']
             elif df.iloc[1]['position'] == 'TE':
                 vols_threshold = df.iloc[10]['fpts']
@@ -135,11 +146,17 @@ class Projections:
         except KeyError:
             pdb.set_trace()
 
+        # TODO Figure out this chained_assignment issue with the error message of:
+        #       SettingWithCopyError:
+        #       A value is trying to be set on a copy of a slice from a DataFrame.
+        #       Try using .loc[row_indexer,col_indexer] = value instead
+        pd.options.mode.chained_assignment = None
         df["vols"] = df.apply(lambda row: self.calc_vols(row, vols_threshold), axis=1)
         df["vorp"] = df.apply(lambda row: self.calc_vorp(row, vorp_threshold), axis=1)
         df["vbd"] = df.apply(lambda row: self.calc_vbd(row), axis=1)
         df['vona'] = df.fpts.diff(periods=-1)
         df = self.sort_reset_index(df)
+
         return df
 
     def calc_vols(self, row, vols_threshold):
@@ -151,17 +168,101 @@ class Projections:
     def calc_vbd(self, row):
         return max(0, row['vols'] + row['vorp'])
 
+    def get_ecr_rankings(self):
+        """
+        Return single dataframe with columns for superflex_rank, suplerflex_tier,
+        and pos_rank, pos_tier.  Also modify the self.dfs for projections.
+        self.flex_df, self.rb_df, self.wr_df, self.te_df = self.clean_flex_df()
+        """
+        # pd.set_option('display.max_columns', None)
+
+        sf_rank_path = Path("data/fpros/FantasyPros_2022_Draft_SuperFlex_Rankings.csv")
+        ecr_df = pd.read_csv(sf_rank_path)
+        # create dict to rename positional columns
+        ecr_col_changes = {"RK": "position_rank", "TIERS": "position_tier", "PLAYER NAME": "name", "TEAM": "team",
+                           "POS": "position",
+                           "BYE WEEK": "bye",
+                           "SOS SEASON": "sos_season",
+                           "ECR VS. ADP": "ecr_vs_adp"}
+        ecr_df.rename(columns={"RK": "superflex_rank",
+                               "TIERS": "superflex_tier",
+                               "PLAYER NAME": "name",
+                               "TEAM": "team",
+                               "POS": "position",
+                               "BYE WEEK": "bye",
+                               "SOS SEASON": "sos_season",
+                               "ECR VS. ADP": "ecr_vs_adp"}, inplace=True)
+
+        # do positional rankings now, combining them with single ECR DF
+        qb_rank_path = Path("data/fpros/FantasyPros_2022_Draft_QB_Rankings.csv")
+        rb_rank_path = Path("data/fpros/FantasyPros_2022_Draft_RB_Rankings.csv")
+        wr_rank_path = Path("data/fpros/FantasyPros_2022_Draft_WR_Rankings.csv")
+        te_rank_path = Path("data/fpros/FantasyPros_2022_Draft_TE_Rankings.csv")
+
+        rank_data_list = [qb_rank_path, rb_rank_path, wr_rank_path, te_rank_path]
+        # print(ecr_df.head())
+        for path in rank_data_list:
+            temp_df = pd.read_csv(path)
+            temp_df.rename(columns=ecr_col_changes, inplace=True)
+            ecr_df = pd.merge(ecr_df, temp_df, how="left", on="name", suffixes=('', '_y'))
+            ecr_df.drop(ecr_df.filter(regex='_y$').columns, axis=1, inplace=True)
+        return ecr_df
+
+    def get_sleeper_ids(self, df):
+
+        # ----- Create the search_names (all lowercase, no spaces) ------ #
+        search_names = []
+        for idx, row in df.iterrows():
+            new_name = re.sub(r'\W+', '', row['name']).lower()
+            if new_name[:-2] == "jr":
+                new_name = new_name[:-2]
+            elif new_name[:-3] == "iii":
+                new_name = new_name[:-3]
+            elif new_name[:-2] == "ii":
+                new_name = new_name[:-2]
+            search_names.append(new_name)
+        df['search_full_name'] = search_names
+
+        # ------ Now iterate over the player dictionary to look up and match sleeper id -----#
+        try:
+            player_search_dict = {v['search_full_name']: k for k, v in players.items()}
+        except:
+            pdb.set_trace()
+        print(player_search_dict)
+
+        for k, v in players.items():
+            try:
+                cur_name = v["search_full_name"]
+                for index, row in df.iterrows():
+                    if "sleeper_id" in df.columns:
+                        pass
+                    elif row["position"] == "DEF":
+                        row["sleeper_id"] = row["team"]
+                    elif cur_name == "cordarrellepatterson":
+                        row["sleeper_id"] = k
+                    elif cur_name == row["search_full_name"]:
+                        if row['team'] == v['team']:
+                            if row["position"] in v["fantasy_positions"]:
+                                row["sleeper_id"] = k
+                            else:
+                                print(f"failure on {row} in DF\n {k} in sleeper")
+            except Exception as e:
+                pass
+                print(e)
+
+        return df
+
+
+
 
 """
 
 """
 # TODO - 1. Calculate Tiers, 2. Match up with Sleeper IDs
-
+pd.set_option("display.max_columns", None)
 prj = Projections()
-df = prj.all_df
-
-
-
+df_2 = prj.all_df
+print(df_2.head(20))
 '''
 # ---------- From Clustering Jupyter notebook
 draft_pool = 192

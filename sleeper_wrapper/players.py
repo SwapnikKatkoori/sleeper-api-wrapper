@@ -37,6 +37,7 @@ class Players(BaseApi):
         self.file_path = Path('data/players/all_players.json')
         self.all_players = self.get_all_players()
 
+
     def get_all_players(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):
         if self.file_path.exists() and self.dir_path.exists():
             print("Players Call: Local path and file exists, reading local version")
