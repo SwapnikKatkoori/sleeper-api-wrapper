@@ -23,7 +23,7 @@ class Projections:
         self.scoring_keys = scoring_keys
         self.qb_df = self.clean_qb_df()
         self.flex_df, self.rb_df, self.wr_df, self.te_df = self.clean_flex_df()
-        self.ecr_df = self.get_ecr_rankings()
+        self.ecr_sf_df, self.ecr_qb_df, self.ecr_rb_df, self.ecr_wr_df, self.ecr_te_df = self.get_ecr_rankings()
         self.all_df = self.get_all_df()
         self.dict = self.all_df.to_dict("records")
 
@@ -34,7 +34,7 @@ class Projections:
         all_df.sort_values(by="vbd", ascending=False, inplace=True)
         all_df.reset_index(drop=True, inplace=True)
         all_df["overall_vbd_rank"] = all_df.index + 1
-        all_df = pd.merge(all_df, self.ecr_df, how="left", on="name", suffixes=('', '_y'))
+        all_df = pd.merge(all_df, self.ecr_sf_df, how="left", on="name", suffixes=('', '_y'))
         all_df.drop(all_df.filter(regex='_y$').columns, axis=1, inplace=True)
         all_df = self.get_sleeper_ids(all_df)
         return all_df
@@ -61,6 +61,7 @@ class Projections:
 
         # lower case all column names
         qb_df.columns = qb_df.columns.str.lower()
+
         qb_df.rename(columns={"tds": "pass_td",
                               "ints": "pass_int",
                               "att": "pass_att",
@@ -70,6 +71,7 @@ class Projections:
                               "tds.1": "rush_td",
                               "fl": "fum_lost",
                               "player": "name"}, inplace=True)
+        qb_df["position_rank_projections"] = qb_df.index + 1
 
         # remove non-numeric (commas) characters from the number fields
         qb_df.replace(',', '', regex=True, inplace=True)
@@ -82,8 +84,7 @@ class Projections:
         # send to add_vbd
         qb_df = self.add_vbd(qb_df)
         # add position and rank columns
-        qb_df["position_rank"] = qb_df.index + 1
-        qb_df["pos_rank"] = "QB" + qb_df["position_rank"].astype(str)
+        qb_df["pos_rank"] = "QB" + qb_df["position_rank_vbd"].astype(str)
         return qb_df
 
     def clean_flex_df(self):
@@ -94,7 +95,7 @@ class Projections:
         flex_df = pd.read_csv(self.flex_path, skiprows=[1])  # skips the first blank row
         flex_df.columns = flex_df.columns.str.lower()
         flex_df["position"] = flex_df["pos"].str[:2]
-        flex_df["position_rank"] = flex_df["pos"].str[2:]
+        flex_df["position_rank_projections"] = flex_df["pos"].str[2:]
         flex_df["bonus_rec_te"] = flex_df["rec"].loc[flex_df["position"] == "TE"]
         flex_df["bonus_rec_te"] = flex_df['bonus_rec_te'].fillna(0)
         flex_df.rename(columns={"player": "name",
@@ -156,7 +157,7 @@ class Projections:
         df["vbd"] = df.apply(lambda row: self.calc_vbd(row), axis=1)
         df['vona'] = df.fpts.diff(periods=-1)
         df = self.sort_reset_index(df)
-
+        df["position_rank_vbd"] = df.index + 1
         return df
 
     def calc_vols(self, row, vols_threshold):
@@ -177,15 +178,15 @@ class Projections:
         # pd.set_option('display.max_columns', None)
 
         sf_rank_path = Path("data/fpros/FantasyPros_2022_Draft_SuperFlex_Rankings.csv")
-        ecr_df = pd.read_csv(sf_rank_path)
+        ecr_sf_df = pd.read_csv(sf_rank_path)
         # create dict to rename positional columns
-        ecr_col_changes = {"RK": "position_rank", "TIERS": "position_tier", "PLAYER NAME": "name", "TEAM": "team",
+        ecr_col_changes = {"RK": "position_rank_ecr", "TIERS": "position_tier_ecr", "PLAYER NAME": "name", "TEAM": "team",
                            "POS": "position",
                            "BYE WEEK": "bye",
                            "SOS SEASON": "sos_season",
                            "ECR VS. ADP": "ecr_vs_adp"}
-        ecr_df.rename(columns={"RK": "superflex_rank",
-                               "TIERS": "superflex_tier",
+        ecr_sf_df.rename(columns={"RK": "superflex_rank_ecr",
+                               "TIERS": "superflex_tier_ecr",
                                "PLAYER NAME": "name",
                                "TEAM": "team",
                                "POS": "position",
@@ -194,19 +195,16 @@ class Projections:
                                "ECR VS. ADP": "ecr_vs_adp"}, inplace=True)
 
         # do positional rankings now, combining them with single ECR DF
-        qb_rank_path = Path("data/fpros/FantasyPros_2022_Draft_QB_Rankings.csv")
-        rb_rank_path = Path("data/fpros/FantasyPros_2022_Draft_RB_Rankings.csv")
-        wr_rank_path = Path("data/fpros/FantasyPros_2022_Draft_WR_Rankings.csv")
-        te_rank_path = Path("data/fpros/FantasyPros_2022_Draft_TE_Rankings.csv")
+        ecr_qb_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_QB_Rankings.csv")
+        ecr_rb_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_RB_Rankings.csv")
+        ecr_wr_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_WR_Rankings.csv")
+        ecr_te_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_TE_Rankings.csv")
 
-        rank_data_list = [qb_rank_path, rb_rank_path, wr_rank_path, te_rank_path]
-        # print(ecr_df.head())
-        for path in rank_data_list:
-            temp_df = pd.read_csv(path)
-            temp_df.rename(columns=ecr_col_changes, inplace=True)
-            ecr_df = pd.merge(ecr_df, temp_df, how="left", on="name", suffixes=('', '_y'))
-            ecr_df.drop(ecr_df.filter(regex='_y$').columns, axis=1, inplace=True)
-        return ecr_df
+        ecr_df_list = [ecr_qb_df, ecr_rb_df, ecr_wr_df, ecr_te_df]
+        for ecr_df in ecr_df_list:
+            ecr_df.rename(columns=ecr_col_changes, inplace=True)
+
+        return ecr_sf_df, ecr_qb_df, ecr_rb_df, ecr_wr_df, ecr_te_df
 
     def get_sleeper_ids(self, df):
 
@@ -214,158 +212,42 @@ class Projections:
         search_names = []
         for idx, row in df.iterrows():
             new_name = re.sub(r'\W+', '', row['name']).lower()
-            if new_name[:-2] == "jr":
+            if new_name[-2:] == "jr":
                 new_name = new_name[:-2]
-            elif new_name[:-3] == "iii":
+                print(new_name)
+            elif new_name[-3:] == "iii":
                 new_name = new_name[:-3]
-            elif new_name[:-2] == "ii":
+            elif new_name[-2:] == "ii":
                 new_name = new_name[:-2]
             search_names.append(new_name)
+
         df['search_full_name'] = search_names
 
-        # ------ Now iterate over the player dictionary to look up and match sleeper id -----#
-        try:
-            player_search_dict = {v['search_full_name']: k for k, v in players.items()}
-        except:
-            pdb.set_trace()
-        print(player_search_dict)
-
-        for k, v in players.items():
-            try:
-                cur_name = v["search_full_name"]
-                for index, row in df.iterrows():
-                    if "sleeper_id" in df.columns:
-                        pass
-                    elif row["position"] == "DEF":
-                        row["sleeper_id"] = row["team"]
-                    elif cur_name == "cordarrellepatterson":
-                        row["sleeper_id"] = k
-                    elif cur_name == row["search_full_name"]:
-                        if row['team'] == v['team']:
-                            if row["position"] in v["fantasy_positions"]:
-                                row["sleeper_id"] = k
-                            else:
-                                print(f"failure on {row} in DF\n {k} in sleeper")
-            except Exception as e:
+        # ------ Now iterate over the player the dataframe and dictionary to look up and match sleeper id -----#
+        count = 0
+        for index, row in df.iterrows():
+            cur_name = row["search_full_name"]
+            if "sleeper_id" in row.index:
                 pass
-                print(e)
-
+            elif row["position"] == "DEF":
+                row["sleeper_id"] = row["team"]
+            else:
+                for k, v in players.items():
+                    if "search_full_name" in v.keys():
+                        if v["search_full_name"] == cur_name:
+                            if v["team"] == row["team"]:
+                                df.loc[index, "sleeper_id"] = k
+                        else:
+                            pass
+                    else:
+                        pass
         return df
 
-
-
-
-"""
-
-"""
 # TODO - 1. Calculate Tiers, 2. Match up with Sleeper IDs
-pd.set_option("display.max_columns", None)
-prj = Projections()
-df_2 = prj.all_df
-print(df_2.head(20))
-'''
-# ---------- From Clustering Jupyter notebook
-draft_pool = 192
 
-df = df[:draft_pool]
-
-from sklearn.metrics import silhouette_score
-from sklearn.cluster import KMeans
-from matplotlib import pyplot as plt
-import numpy as np
-import seaborn as sns;
-
-sns.set_style('whitegrid');
-
-avgs = []
-pd.set_option("display.max_columns", None)
-# print(df.columns)
-# pdb.set_trace()
-"""
-We are going iterate from k=4 -> k=34 and try to find the silhouette score for each value of K.
-We are going to choose the K that results in the highest score.
-"""
-start = 4
-stop = 35
-
-for n_clusters in range(start, stop):
-    """
-    We are clustering our data with the Avg. column as our one feature.
-    """
-
-    X = df[['vbd']].values
-
-    """
-    sklearn.cluster.KMeans documentation
-
-    Notice that the process for fitting the KMeans model is more or less equivalent to the process
-    we went through with the LinearRegression model we pulled out from the linear_model module.
-
-    https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html
-    """
-
-    model = KMeans(n_clusters=n_clusters)  # instantiate the model with hyperparameters
-
-    model.fit(X)  # fit the model
-
-    labels = model.predict(X)  # predict labels (assign clusters) to our data
-
-    silhouette_avg = silhouette_score(X, labels)  # calculate the silhouette avg for our labels
-
-    avgs.append(silhouette_avg)  # append it to a list for plotting later
-
-"""
-Plotting the results.
-np.arange is very similar to Python's range function
-
-numpy.arange documentation
-
-https://numpy.org/doc/stable/reference/generated/numpy.arange.html
-"""
-plt.plot(np.arange(start, stop, 1), avgs);
-plt.xlabel('Number of clusters');
-plt.ylabel('Silhouette score');
-
-"""
-matplotlib.pyplot.xticks allows us to set the xticks manually.
-https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.xticks.html
-"""
-# print(plt.xticks(np.arange(start, stop, 1)))
-
-from sklearn.cluster import KMeans
-
-# pd.set_option('display.max_rows', None)
-
-X = df[['vbd']].values
-
-k = 32 # this is the value we got back from doing the silhouette analysis above
-
-model = KMeans(n_clusters=k)
-
-print(model.fit(X))
-
-labels = model.predict(X)
-
-print(labels)
-
-def assign_tiers(labels):
-    unique_labels = []
-    tiers = []
-
-    for i in labels:
-        if i not in unique_labels:
-            unique_labels.append(i)
-
-        tiers.append(
-            len(set(unique_labels))
-        )
-
-    return tiers
-
-
-tiers = assign_tiers(labels)
-
-df['Tier'] = tiers
-
-print(df.set_index('Tier').head(30))
-'''
+projections = Projections()
+df = projections.all_df
+print(df.keys())
+pdict = projections.dict
+for p in pdict:
+    print(p)
