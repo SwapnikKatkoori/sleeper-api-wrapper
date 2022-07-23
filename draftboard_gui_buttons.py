@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import pdb
 import time
-
 import PySimpleGUI as sg
 import csv
 import requests
@@ -16,6 +15,9 @@ BOARD_LENGTH = 192
 MAX_ROWS = 17
 MAX_COLS = 12
 
+def get_mock_keepers(mock_id = 855927933192220672):
+    mock_draft = Drafts(mock_id)
+    return mock_draft.get_all_picks()
 
 def TableSimulation():
     """
@@ -87,32 +89,36 @@ def TableSimulation():
         except:
             pdb.set_trace()
     adp_list_length = len(adp_list)
+    print(f"Before Adp {adp_list_length}")
     if len(adp_list) > BOARD_LENGTH:
         for x in range(adp_list_length - BOARD_LENGTH):
             print(f"Removing item: {adp_list.pop(-1)}")
     elif len(adp_list) < BOARD_LENGTH:
         for x in range(BOARD_LENGTH - adp_list_length):
             adp_list.append({"name": "  ", "position": ".", "team": "", "bye": ""})
-
+    print(f"after Adp {len(adp_list)}")
     """
-    Create JSON to store/read keepers
+    Access Mock Draft to get keepers
     """
-    with open('data/keepers/keepers.json', 'r') as keeper_file:
-        keeper_list = json.load(keeper_file)
-    # removing all keepers in keeper_list from adp_list
+    keeper_list = get_mock_keepers()
+    print(f"Before Keeper Insert {len(adp_list)}")
     for k in keeper_list:
         k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
         k['position'] = k['metadata']['position']
         k['team'] = k['metadata']['team']
+
         for i, d in enumerate(adp_list):
             if d['name'].strip() == k['name'].strip():
                 k['bye'] = d['bye']
                 adp_list.pop(i)
+        print(f"After Adp Popping {len(adp_list)}")
     # sorting the keeper list by the pick
     keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
     # inserting all keepers in keeper_list back into adp_list
     for k in keeper_list:
         adp_list.insert(k['pick_no'] - 1, k)
+
+    print(f"after Keeper Insert {len(adp_list)}")
     # print(keeper_list[0])
 
     # pdb.set_trace()
@@ -120,9 +126,10 @@ def TableSimulation():
     """
     Create draftboard (db) from numpy array of vbd_list
     """
-    vbd_prj = Projections()
-    vbd_list = vbd_prj.dict
+    fpros = Projections()
+    vbd_list = fpros.list_of_player_dicts
     vbd_list = vbd_list[:MAX_COLS*MAX_ROWS]
+    pdb.set_trace()
     # pdb.set_trace()
     """
     vbd_path = Path("data/vbd/vbd.json")
@@ -136,7 +143,7 @@ def TableSimulation():
     db[1::2, :] = db[1::2, ::-1]
 
     empty_db = np.empty([MAX_ROWS, MAX_COLS])
-
+    pdb.set_trace()
     """
     TODO: Map and create right-click menus,
     Sort by ADP or VBD or VOLS or VORP

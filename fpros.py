@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 from sleeper_wrapper import League, Players
 import json
+import time
 
 league = League()
 players = Players()
@@ -21,22 +22,39 @@ class Projections:
         self.qb_path = Path("data/fpros/FantasyPros_Fantasy_Football_Projections_QB.csv")
         self.flex_path = Path("data/fpros/FantasyPros_Fantasy_Football_Projections_FLX.csv")
         self.scoring_keys = scoring_keys
+        # ----- Projections and VBD -------#
         self.qb_df = self.clean_qb_df()
         self.flex_df, self.rb_df, self.wr_df, self.te_df = self.clean_flex_df()
+        # ------ ECR rankings for SuperFlex, and positional ------- #
         self.ecr_sf_df, self.ecr_qb_df, self.ecr_rb_df, self.ecr_wr_df, self.ecr_te_df = self.get_ecr_rankings()
         self.all_df = self.get_all_df()
-        self.dict = self.all_df.to_dict("records")
+        self.list_of_player_dicts = self.all_df.to_dict("records")
 
     def get_all_df(self):
+        # all_df refers to the projections and VBD dataframes
+        # Stack the positonial projection dataframes on top of each each other,
         all_df = pd.concat([self.qb_df, self.rb_df, self.wr_df, self.te_df]).fillna(0)
         all_df.drop(all_df[all_df['name'] == 0].index, inplace=True)
+        # ---- Sorting the all_dfs by VBD to add overall VBD ranking ------ #
         all_df = self.sort_reset_index(all_df)
         all_df.sort_values(by="vbd", ascending=False, inplace=True)
         all_df.reset_index(drop=True, inplace=True)
         all_df["overall_vbd_rank"] = all_df.index + 1
+
+        # Now merge the all_df(vbd/projections) with the ECR superflex
         all_df = pd.merge(all_df, self.ecr_sf_df, how="left", on="name", suffixes=('', '_y'))
         all_df.drop(all_df.filter(regex='_y$').columns, axis=1, inplace=True)
+
+        # now take all values to get the sleeper_ids
+        print(len(all_df))
+        print("Looking up sleeper Values")
+        start = time.time()
         all_df = self.get_sleeper_ids(all_df)
+        end = time.time()
+        print(f"Total time to lookup Sleeper Values: {end - start} seconds")
+
+
+
         return all_df
 
     def sort_reset_index(self, df):
@@ -179,31 +197,40 @@ class Projections:
 
         sf_rank_path = Path("data/fpros/FantasyPros_2022_Draft_SuperFlex_Rankings.csv")
         ecr_sf_df = pd.read_csv(sf_rank_path)
+        ecr_sf_df.drop(columns="ECR VS. ADP", inplace=True)
+
+        ecr_sf_df.rename(columns={"RK": "superflex_rank_ecr",
+                                  "TIERS": "superflex_tier_ecr",
+                                  "PLAYER NAME": "name",
+                                  "TEAM": "team",
+                                  "POS": "pos_rank",
+                                  "BYE WEEK": "bye",
+                                  "SOS SEASON": "sos_season"}, inplace=True)
+
+        # do positional rankings now, combining them with single ECR DF
         # create dict to rename positional columns
-        ecr_col_changes = {"RK": "position_rank_ecr", "TIERS": "position_tier_ecr", "PLAYER NAME": "name", "TEAM": "team",
+        ecr_col_changes = {"RK": "position_rank_ecr", "TIERS": "position_tier_ecr", "PLAYER NAME": "name",
+                           "TEAM": "team",
                            "POS": "position",
                            "BYE WEEK": "bye",
                            "SOS SEASON": "sos_season",
                            "ECR VS. ADP": "ecr_vs_adp"}
-        ecr_sf_df.rename(columns={"RK": "superflex_rank_ecr",
-                               "TIERS": "superflex_tier_ecr",
-                               "PLAYER NAME": "name",
-                               "TEAM": "team",
-                               "POS": "position",
-                               "BYE WEEK": "bye",
-                               "SOS SEASON": "sos_season",
-                               "ECR VS. ADP": "ecr_vs_adp"}, inplace=True)
-
-        # do positional rankings now, combining them with single ECR DF
         ecr_qb_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_QB_Rankings.csv")
         ecr_rb_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_RB_Rankings.csv")
         ecr_wr_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_WR_Rankings.csv")
         ecr_te_df = pd.read_csv("data/fpros/FantasyPros_2022_Draft_TE_Rankings.csv")
-
+        ecr_qb_df["position"] = "QB"
+        ecr_rb_df["position"] = "RB"
+        ecr_wr_df["position"] = "WR"
+        ecr_te_df["position"] = "TE"
         ecr_df_list = [ecr_qb_df, ecr_rb_df, ecr_wr_df, ecr_te_df]
         for ecr_df in ecr_df_list:
             ecr_df.rename(columns=ecr_col_changes, inplace=True)
-
+        pd.set_option("display.max_column", None)
+        position_ecr_combined_df = pd.concat(ecr_df_list).fillna(0)
+        cols_to_use = position_ecr_combined_df.columns.difference(ecr_sf_df.columns).to_list()
+        cols_to_use.append("name")
+        ecr_sf_df = pd.merge(ecr_sf_df, position_ecr_combined_df[cols_to_use], how="outer", on="name")
         return ecr_sf_df, ecr_qb_df, ecr_rb_df, ecr_wr_df, ecr_te_df
 
     def get_sleeper_ids(self, df):
@@ -214,7 +241,6 @@ class Projections:
             new_name = re.sub(r'\W+', '', row['name']).lower()
             if new_name[-2:] == "jr":
                 new_name = new_name[:-2]
-                print(new_name)
             elif new_name[-3:] == "iii":
                 new_name = new_name[:-3]
             elif new_name[-2:] == "ii":
@@ -224,7 +250,6 @@ class Projections:
         df['search_full_name'] = search_names
 
         # ------ Now iterate over the player the dataframe and dictionary to look up and match sleeper id -----#
-        count = 0
         for index, row in df.iterrows():
             cur_name = row["search_full_name"]
             if "sleeper_id" in row.index:
@@ -242,12 +267,3 @@ class Projections:
                     else:
                         pass
         return df
-
-# TODO - 1. Calculate Tiers, 2. Match up with Sleeper IDs
-
-projections = Projections()
-df = projections.all_df
-print(df.keys())
-pdict = projections.dict
-for p in pdict:
-    print(p)
