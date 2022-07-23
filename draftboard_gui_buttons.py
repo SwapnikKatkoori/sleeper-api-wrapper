@@ -74,6 +74,7 @@ def TableSimulation():
     Get ADP Data and list of players, add empty items in the list with for loop to convert  to NP array
     """
     file_path = Path('data/adp/adp.json')
+    pop_count = 0
     try:
         adp_response = requests.get(
             url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&year=2022&position=all")
@@ -111,7 +112,9 @@ def TableSimulation():
             if d['name'].strip() == k['name'].strip():
                 k['bye'] = d['bye']
                 adp_list.pop(i)
-        print(f"After Adp Popping {len(adp_list)}")
+                pop_count += 1
+
+        print(f"Total Popped {pop_count}")
     # sorting the keeper list by the pick
     keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
     # inserting all keepers in keeper_list back into adp_list
