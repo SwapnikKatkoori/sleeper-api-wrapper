@@ -233,11 +233,14 @@ class Projections:
         ecr_sf_df = pd.merge(ecr_sf_df, position_ecr_combined_df[cols_to_use], how="outer", on="name")
         return ecr_sf_df, ecr_qb_df, ecr_rb_df, ecr_wr_df, ecr_te_df
 
-    def get_sleeper_ids(self, df):
 
+    def get_sleeper_ids(self, df):
+        start_time = time.time()
         # ----- Create the search_names (all lowercase, no spaces) ------ #
         search_names = []
         for idx, row in df.iterrows():
+            if row["team"] == "JAC":
+                df.loc[idx, "team"] = "JAX"
             new_name = re.sub(r'\W+', '', row['name']).lower()
             if new_name[-2:] == "jr":
                 new_name = new_name[:-2]
@@ -248,7 +251,35 @@ class Projections:
             search_names.append(new_name)
 
         df['search_full_name'] = search_names
+        search_name_tuples = list(zip(df.search_full_name, df.team))
 
+        players = Players()
+        players_df = players.get_players_df(['QB', 'RB', 'WR', 'TE'])
+        players_match_df = players_df[players_df[['search_full_name', 'team']].apply(tuple, axis=1).isin(search_name_tuples)]
+        cols_to_use = players_match_df.columns.difference(df.columns).to_list()
+        cols_to_use.append("search_full_name")
+        df = pd.merge(df, players_match_df[cols_to_use], how="left", on="search_full_name")
+        for index, row in df.iterrows():
+            if row["position"] == "DEF":
+                df.loc[index, "sleeper_id"] = row["team"]
+            else:
+                df.loc[index, "sleeper_id"] = row["player_id"]
+        # df['sleeper_id'] = df.apply(lambda x: x['team'] if x['player_id'] is None else x['player_id'], axis=1)
+        match_search_names = df['search_full_name'].to_list()
+        missing_search_names = [n for n in search_names if n not in match_search_names]
+        if missing_search_names:
+            print(f"Missing Search Names: {missing_search_names}")
+        """
+        df = players_df[players_df[['search_full_name', 'team']].apply(tuple, axis=1).isin(search_name_tuples)]
+        match_search_names = df['search_full_name'].to_list()
+
+        missing_search_names = [n for n in search_names if n not in match_search_names]
+        end_time = time.time()
+        print(f"Missing Search Names: {missing_search_names}")
+        print(f"Total Time to get Sleeper IDs{end_time - start_time}")
+        """
+        return df
+        """
         # ------ Now iterate over the player the dataframe and dictionary to look up and match sleeper id -----#
         for index, row in df.iterrows():
             cur_name = row["search_full_name"]
@@ -256,14 +287,32 @@ class Projections:
                 pass
             elif row["position"] == "DEF":
                 row["sleeper_id"] = row["team"]
-            else:
-                for k, v in players.items():
-                    if "search_full_name" in v.keys():
-                        if v["search_full_name"] == cur_name:
-                            if v["team"] == row["team"]:
-                                df.loc[index, "sleeper_id"] = k
+
+            match = False
+            for k, v in players.items():
+                if "search_full_name" in v.keys():
+                    if v["search_full_name"] == cur_name:
+                        if v["team"] == row["team"]:
+                            df.loc[index, "sleeper_id"] = k
+                            match = True
                         else:
                             pass
                     else:
                         pass
+                else:
+                    pass
+            if not match:
+                print(f"FPros: No Match on {row['search_full_name']}")
+        print(df.loc[df['sleeper_id'].isna()])
+        # pdb.set_trace()
         return df
+        """
+
+
+"""        
+projections = Projections()
+p = projections.list_of_player_dicts
+print(p)
+with open('data/fpros/fpros_players_dicts.json', 'w') as file:
+    json.dump(p, file, indent=4)
+"""

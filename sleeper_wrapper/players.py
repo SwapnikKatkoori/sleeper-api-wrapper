@@ -1,7 +1,7 @@
 from .base_api import BaseApi
 import json
 from pathlib import Path
-
+import pandas as pd
 
 class Player(object):
 
@@ -36,9 +36,14 @@ class Players(BaseApi):
         self.dir_path = Path('data/players')
         self.file_path = Path('data/players/all_players.json')
         self.all_players = self.get_all_players()
+        self.players_df = self.get_players_df()
 
+    def get_players_df(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):
+        df = pd.DataFrame.from_dict(self.all_players, orient="index")
 
-    def get_all_players(self, position_list=['QB', 'RB', 'WR', 'TE', 'K', 'DEF']):
+        return df[df.position.isin(position_list)]
+
+    def get_all_players(self, ):
         if self.file_path.exists() and self.dir_path.exists():
             print("Players Call: Local path and file exists, reading local version")
             with open(self.file_path) as json_file:
@@ -49,6 +54,8 @@ class Players(BaseApi):
             all_players = self._call("https://api.sleeper.app/v1/players/nfl")
             with open(self.file_path, 'w') as outfile:
                 json.dump(all_players, outfile, indent=4)
+
+
 
         return all_players
 
