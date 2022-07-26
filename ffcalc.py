@@ -22,7 +22,8 @@ def get_sleeper_ids(df):
     for idx, row in df.iterrows():
         if row["team"] == "JAC":
             df.loc[idx, "team"] = "JAX"
-
+        if row["team"] == "FA":
+            df.loc[idx, "team"] = None
         new_name = re.sub(r'\W+', '', row['name']).lower()
         if new_name[-3:] == "iii":
             new_name = new_name[:-3]
@@ -34,6 +35,10 @@ def get_sleeper_ids(df):
 
         if new_name == "mitchelltrubisky":
             new_name = "mitchtrubisky"
+
+        if new_name == "williamfullerv":
+            new_name = "williamfuller"
+
         search_names.append(new_name)
 
     df['search_full_name'] = search_names
@@ -98,12 +103,11 @@ def get_adp_df(adp_type="2qb", adp_year=YEAR, teams_count=12, positions="all"):
 
     adp_df = pd.DataFrame(adp_dict)
     adp_df.rename(columns={"player_id": "ffcalc_id"}, inplace=True)
-    adp_df["draft_pick"] = adp_df.index + 1
+    adp_df["adp_pick"] = adp_df.index + 1
     adp_df = get_sleeper_ids(adp_df)
 
     end_time = time.time()
     print(f"Time to get ADP DF: {end_time - start_time}")
-
 
     return adp_df
 

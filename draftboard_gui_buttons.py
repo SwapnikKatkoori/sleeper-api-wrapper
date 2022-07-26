@@ -116,15 +116,15 @@ import numpy as np
 from pathlib import Path
 import json
 from sleeper_wrapper import Drafts, League, Players
-from ecr import get_fpros_data, merge_dfs
+from ecr import get_fpros_data, merge_dfs, get_player_pool
 from ffcalc import get_adp_df
 
 BOARD_LENGTH = 192
 
 MAX_ROWS = 17
 MAX_COLS = 12
-
-
+PLAYER_POOL = get_player_pool()
+"""
 def get_player_pool():
     # first get the fantasy pros data/projections as dataframe
 
@@ -150,6 +150,7 @@ def get_player_pool():
     pool_df.to_csv('data/player_pool/pool_df.csv')
     # pdb.set_trace()
     return pool_df
+"""
 
 
 def sort_table(table, cols):
@@ -227,7 +228,7 @@ def TableSimulation():
                  "PK": "white on purple",
                  "DEF": "white on sienna",
                  ".": "white"}
-    PLAYER_POOL = get_player_pool()
+
     """
     Get League and user/map
     """
@@ -255,8 +256,7 @@ def TableSimulation():
     drafted_list = draft.get_all_picks()
     keeper_list = get_mock_keepers()
 
-    PLAYER_POOL.sort_values(by=['draft_pick', 'superflex_rank_ecr'], ascending=[True, True], na_position='last',
-                            inplace=True)
+    PLAYER_POOL.sort_values(by=['adp_pick'], ascending=True, na_position='last', inplace=True)
     db = np.array(PLAYER_POOL[:MAX_ROWS * MAX_COLS].to_dict("records"))
 
     rb_list = PLAYER_POOL[PLAYER_POOL["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
@@ -466,7 +466,7 @@ def TableSimulation():
             else:
                 window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
         elif event == "-Load-ADP-":
-            PLAYER_POOL.sort_values(by=['draft_pick', 'superflex_rank_ecr'], ascending=[True, True], na_position='last',
+            PLAYER_POOL.sort_values(by=['adp_pick'], ascending=True, na_position='last',
                                     inplace=True)
             db = np.array(PLAYER_POOL[:MAX_ROWS * MAX_COLS].to_dict("records"))
             db = np.reshape(db, (MAX_ROWS, MAX_COLS))

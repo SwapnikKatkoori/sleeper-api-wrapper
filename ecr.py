@@ -157,6 +157,36 @@ def merge_dfs(df1, df2, col_to_match, how="left"):
     df = pd.merge(df1, df2[cols_to_use], how=how, on=col_to_match)
     return df
 
+def get_player_pool():
+    start_time = time.time()
+    fpros_df = get_fpros_data(player_count=225)
+    adp_df = get_adp_df()
+    # remove kickers and defenses
+    adp_kd = adp_df.loc[adp_df['position'].isin(["PK", "DEF"])]
+    adp_df = adp_df.loc[adp_df['position'].isin(["QB", "WR", "TE", "RB"])]
+
+    # merge adp w/out K and D to the fpros dataframe
+    draft_pool = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
+    # add the kicker/defense back into the draft pool by concat
+    draft_pool = pd.concat([draft_pool, adp_kd])  # , merge, how="outer", sort=True)
+
+    # Now time to clean up some ranking columns
+    draft_pool.sort_values(by=['adp_pick', 'superflex_rank_ecr'], na_position='last', inplace=True)
+    draft_pool.reset_index(drop=True, inplace=True)
+    draft_pool['adp_pick'] = draft_pool.index + 1
+    draft_pool[['superflex_rank_ecr', 'superflex_tier_ecr']] = draft_pool[['superflex_rank_ecr', 'superflex_tier_ecr']].fillna(
+        value=999).astype(int)
+
+    # Now time to add the button_text and cheatsheet_text values
+    draft_pool["button_text"] = draft_pool['first_name'] + '\n' + draft_pool['last_name'] + '\n' + draft_pool['position'] + ' (' \
+                             + draft_pool['team'] + ') ' + draft_pool['bye'].astype(str)
+
+    draft_pool["cheatsheet_text"] = draft_pool['pos_rank'] + ' ' + draft_pool['name'] + ' ' + draft_pool['team']
+    # Look up 1817-Watkins;  257
+    end_time = time.time()
+    print(f"Time to make Player Draft Pool: {end_time - start_time}")
+    return draft_pool
+
 
 # ------------- GUI SETUP and func----------- #
 def make_table(gui_df):
@@ -166,19 +196,16 @@ def make_table(gui_df):
     table.show()
 
 
-start_time = time.time()
-fpros_df = get_fpros_data(player_count=225)
-adp_df = get_adp_df()
-merge = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
-end_time = time.time()
-print(f"Time to call ECR Rank AND VBD: {end_time-start_time}")
 
+
+draft_pool = get_player_pool()
 window = Tk()
 window.title("Sleeper Project")
 table_frame = Frame(window)
 table_frame.pack(fill=BOTH, expand=1, side="right")
 select_frame = Frame(window)
 select_frame.pack(side="left")
-make_table(merge)
+make_table(draft_pool)
 
 window.mainloop()
+
