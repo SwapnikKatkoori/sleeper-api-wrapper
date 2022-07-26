@@ -43,7 +43,7 @@ class Players(BaseApi):
 
         return df[df.position.isin(position_list)]
 
-    def get_all_players(self, ):
+    def get_all_players(self):
         if self.file_path.exists() and self.dir_path.exists():
             print("Players Call: Local path and file exists, reading local version")
             with open(self.file_path) as json_file:

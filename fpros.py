@@ -163,7 +163,7 @@ class Projections:
                 vols_threshold = df.iloc[10]['fpts']
                 vorp_threshold = df.iloc[22]['fpts']
         except KeyError:
-            pdb.set_trace()
+            print("Key Error in FPros Add VBD Func")
 
         # TODO Figure out this chained_assignment issue with the error message of:
         #       SettingWithCopyError:
@@ -248,6 +248,11 @@ class Projections:
                 new_name = new_name[:-3]
             elif new_name[-2:] == "ii":
                 new_name = new_name[:-2]
+
+            if new_name == "mitchelltrubisky":
+                new_name = "mitchtrubisky"
+            if new_name == "kennethwalker":
+                new_name = "kenwalker"
             search_names.append(new_name)
 
         df['search_full_name'] = search_names

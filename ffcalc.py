@@ -15,15 +15,15 @@ players = Players()
 YEAR = datetime.today().strftime('%Y')
 TODAY = datetime.today().strftime('%Y-%m-%d')
 
-def get_search_names(df):
+def get_sleeper_ids(df):
     # ----- Create the search_names (all lowercase, no spaces) ------ #
     search_names = []
     remove = ['jr', 'ii', 'sr']
     for idx, row in df.iterrows():
         if row["team"] == "JAC":
             df.loc[idx, "team"] = "JAX"
-        new_name = re.sub(r'\W+', '', row['name']).lower()
 
+        new_name = re.sub(r'\W+', '', row['name']).lower()
         if new_name[-3:] == "iii":
             new_name = new_name[:-3]
         elif new_name[-2:] in remove:
@@ -31,6 +31,9 @@ def get_search_names(df):
 
         if new_name == "kennethwalker":
             new_name = "kenwalker"
+
+        if new_name == "mitchelltrubisky":
+            new_name = "mitchtrubisky"
         search_names.append(new_name)
 
     df['search_full_name'] = search_names
@@ -51,6 +54,8 @@ def get_search_names(df):
     missing_search_names = [n for n in search_names if n not in match_search_names]
     if missing_search_names:
         print(f"Missing Search Names: {missing_search_names}")
+    # print(df.loc[df['name'] == "Tyreek Hill"])
+    # pdb.set_trace()
     return df
 
 def get_adp_df(adp_type="2qb", adp_year=YEAR, teams_count=12, positions="all"):
@@ -92,28 +97,28 @@ def get_adp_df(adp_type="2qb", adp_year=YEAR, teams_count=12, positions="all"):
     adp_dict = adp_data["players"]
 
     adp_df = pd.DataFrame(adp_dict)
-
-    adp_df.rename(columns={'player_id': 'ffcalc_id'}, inplace=True)
-    adp_df = get_search_names(adp_df)
+    adp_df.rename(columns={"player_id": "ffcalc_id"}, inplace=True)
+    adp_df["draft_pick"] = adp_df.index + 1
+    adp_df = get_sleeper_ids(adp_df)
 
     end_time = time.time()
-    print(end_time - start_time)
-    adp_data["players"] = adp_df.to_dict(orient="records")
-    with open(file_path, 'w') as data_file:
-        json.dump(adp_data, data_file, indent=4)
+    print(f"Time to get ADP DF: {end_time - start_time}")
+
+
     return adp_df
 
+
+"""
+# ------------- GUI SETUP and func----------- #
 def make_table(gui_df):
-    """
-    Table Func for GUI
-    """
+    # Table Func for GUI
+
     table = Table(table_frame, dataframe=gui_df, showtoolbar=True, showstatusbar=True)
     table.autoResizeColumns()
     table.show()
 
 
-# ------------- GUI SETUP ----------- #
-
+#--------GUI--------#
 df = get_adp_df()
 
 window = Tk()
@@ -125,9 +130,14 @@ select_frame.pack(side="left")
 make_table(df)
 
 window.mainloop()
+
+
+"""
+
+
+"""
 def get_adp(url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&year=2022&position=all"):
 
-    """
     OLD ADP Code
     file_path = Path('data/adp/adp.json')
     try:
@@ -180,9 +190,10 @@ def get_adp(url="https://fantasyfootballcalculator.com/api/v1/adp/2qb?teams=12&y
         json.dump(adp, data_file, indent=4)
 
     return adp
-    """
+    
     pass
-"""
+
+
 ADP code from db-gui
 file_path = Path('data/adp/adp.json')
     pop_count = 0
