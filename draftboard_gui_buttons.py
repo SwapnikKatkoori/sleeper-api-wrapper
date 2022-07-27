@@ -123,7 +123,7 @@ BOARD_LENGTH = 192
 
 MAX_ROWS = 17
 MAX_COLS = 12
-PLAYER_POOL = get_player_pool()
+PP = get_player_pool()
 """
 def get_player_pool():
     # first get the fantasy pros data/projections as dataframe
@@ -227,7 +227,8 @@ def TableSimulation():
                  "TE": "white on coral",
                  "PK": "white on purple",
                  "DEF": "white on sienna",
-                 ".": "white"}
+                 ".": "white",
+                 "-": "black on grey"}
 
     """
     Get League and user/map
@@ -256,26 +257,42 @@ def TableSimulation():
     drafted_list = draft.get_all_picks()
     keeper_list = get_mock_keepers()
 
-    PLAYER_POOL.sort_values(by=['adp_pick'], ascending=True, na_position='last', inplace=True)
-    db = np.array(PLAYER_POOL[:MAX_ROWS * MAX_COLS].to_dict("records"))
+    PP.sort_values(by=['adp_pick'], ascending=True, na_position='last', inplace=True)
+    adp_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+    adp_db = np.reshape(adp_db, (MAX_ROWS, MAX_COLS))
+    PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
+    vbd_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+    vbd_db = np.reshape(vbd_db, (MAX_ROWS, MAX_COLS))
+    db = np.empty([MAX_ROWS, MAX_COLS])
 
-    rb_list = PLAYER_POOL[PLAYER_POOL["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
 
-    temp_list = PLAYER_POOL[PLAYER_POOL["position"] == "RB"].groupby('position_tier_ecr')['name'].apply(list)
-    rb_pool = PLAYER_POOL[PLAYER_POOL["position"] == "RB"]
-    temp_list.transpose()
-
+    # pdb.set_trace()
     db = np.reshape(db, (MAX_ROWS, MAX_COLS))
     db[1::2, :] = db[1::2, ::-1]
+    db = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
 
-    empty_db = np.empty([MAX_ROWS, MAX_COLS])
 
     """
     TODO: Map and create right-click menus,
     Sort by ADP or VBD or VOLS or VORP
     Create Keeper method
     """
+    """
+    Cheat Sheet List building
+    
+    rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
 
+    # rb_list = PP[PP["position"] == "RB"].Tranpose sort_values(by="position_rank_ecr").to_dict("records")
+    # rb_list PP[PP["position"] == "RB"].pivot(index='1-sensor', columns='2-day', values='3-voltage')
+    
+    # t2 = PP[PP["position"] == "RB"].T.groupby('position_tier_ecr')['name'].apply(list)
+    rd = PP[PP["position"] == "RB"].T
+    """
+    rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
+    rb_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
+    wr_list = PP[PP["position"] == "WR"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
+    qb_list = PP[PP["position"] == "QB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
+    te_list = PP[PP["position"] == "TE"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
     filter_tooltip = "Find player"
 
     # noinspection PyTypeChecker
@@ -301,29 +318,29 @@ def TableSimulation():
 
     col2 = [[sg.T("Cheat Sheets")],
             [sg.T("QB")],
-            [sg.Listbox(['QB ' + str(i) for i in range(1, 26)], key='-QB-LIST-', size=(20, 15), auto_size_text=True,
+            [sg.Listbox(qb_list, key='-QB-LIST-', size=(20, 15), auto_size_text=True,
                         expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
             [sg.T("RB")],
-            [sg.Listbox([str(p['position_tier_ecr']) + ' ' + p['name'] for p in rb_list], key="-RB-LIST-",
+            [sg.Listbox(rb_list, key="-RB-LIST-",
                         size=(20, 15), auto_size_text=True,
                         expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
             [sg.T("WR")],
-            [sg.Listbox(['WR ' + str(i) for i in range(1, 26)], key='-WR-LIST-', size=(20, 15), auto_size_text=True,
+            [sg.Listbox(wr_list, key='-WR-LIST-', size=(20, 15), auto_size_text=True,
                         expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
             [sg.T("TE")],
-            [sg.Listbox(['TE ' + str(i) for i in range(1, 26)], key="-TE-LIST-", size=(20, 12), auto_size_text=True,
+            [sg.Listbox(te_list, key="-TE-LIST-", size=(20, 12), auto_size_text=True,
                         expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)]]
 
-    ecr_cheat = PLAYER_POOL.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
+    ecr_cheat = PP.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
     ecr_cheat = ecr_cheat[['superflex_tier_ecr', 'superflex_rank_ecr', 'position', 'name', 'team', 'sleeper_id']]
 
-    temp_list = PLAYER_POOL[PLAYER_POOL["position"] == "RB"].groupby('position_tier_ecr')['name'].apply(list)
+    temp_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['name'].apply(list)
 
     ecr_cheat.fillna(value="-", inplace=True)
     ecr_group = ecr_cheat.groupby('superflex_tier_ecr')['name'].apply(list)
     ecr_data = ecr_cheat.values.tolist()
     ecr_columns = ecr_cheat.columns.tolist()
-    pdb.set_trace()
+    # pdb.set_trace()
     col3 = [[sg.Table(ecr_data,
                       headings=['Tier', 'ECR', 'Pos', 'Team', 'Name', 'sleeper_id'],
                       col_widths=3,
@@ -377,15 +394,16 @@ def TableSimulation():
                       metadata=None)
 
              ]]
-    col1 = sg.Column(col1, size=(1200, 796), vertical_alignment="bottom", justification="bottom",
+    col1 = sg.Column(col1, size=(1500, 800), vertical_alignment="bottom", justification="bottom",
                      element_justification="center")
     col2 = sg.Column(col2, size=(150, 796))
     col3 = sg.Column(col3, size=(150, 796))
-    cheat_frame = sg.Frame("Cheat Sheets", [[col3, col2]], )
+    cheat_frame = sg.Frame("Cheat Sheets", [[col2]], )
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
                sg.Button('Load VBD', key="-Load-VBD-"),
                sg.Button('Load ADP', key="-Load-ADP-"),
+               sg.Button('Load Draftboard', key="-Load-DB-"),
                sg.Button('Refresh', key="-Refresh-"),
                sg.Text('Search: '),
                sg.Input(key='-Search-', enable_events=True, focus=True, tooltip=filter_tooltip),
@@ -466,26 +484,34 @@ def TableSimulation():
             else:
                 window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
         elif event == "-Load-ADP-":
-            PLAYER_POOL.sort_values(by=['adp_pick'], ascending=True, na_position='last',
-                                    inplace=True)
-            db = np.array(PLAYER_POOL[:MAX_ROWS * MAX_COLS].to_dict("records"))
-            db = np.reshape(db, (MAX_ROWS, MAX_COLS))
+            # PP.sort_values(by=['adp_pick'], ascending=True, na_position='last',
+            #               inplace=True)
+            # db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+            # db = np.reshape(db, (MAX_ROWS, MAX_COLS))
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
                     window[(r, c)].update(
-                        button_color=BG_COLORS[db[r, c]["position"]],
-                        text=db[r, c]['button_text']
+                        button_color=BG_COLORS[adp_db[r, c]["position"]],
+                        text=adp_db[r, c]['button_text']
                     )
         elif event == "-Load-VBD-":
-            PLAYER_POOL.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
-            db = np.array(PLAYER_POOL[:MAX_ROWS * MAX_COLS].to_dict("records"))
-            db = np.reshape(db, (MAX_ROWS, 12))
-            db[1::2, :] = db[1::2, ::-1]
+            # PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
+            # db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+            # db = np.reshape(db, (MAX_ROWS, 12))
+            # db[1::2, :] = db[1::2, ::-1]
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
-                    window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]],
-                                          text=f"{db[r, c]['button_text']}")
-
+                    window[(r, c)].update(button_color=BG_COLORS[vbd_db[r, c]["position"]],
+                                          text=f"{vbd_db[r, c]['button_text']}")
+        elif event == "-Load-DB-":
+            #PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
+            #db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+            #db = np.reshape(db, (MAX_ROWS, MAX_COLS))
+            #empty_db = np.empty([MAX_ROWS, MAX_COLS])
+            #db[1::2, :] = db[1::2, ::-1]
+            for c in range(MAX_COLS):
+                for r in range(MAX_ROWS):
+                    window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]], text=db[r, c]['button_text'])
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Open':
