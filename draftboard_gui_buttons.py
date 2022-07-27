@@ -167,8 +167,14 @@ def reorder_keepers(list_to_sort, keeper_list):
 
 
 def KeeperPopUp():
-    PP["is_keeper"] = False
-    keeper_list = [row for row in PP] #  if row["is_keeper"] is True]
+    keeper_json_path = Path('data/keepers/keepers.json')
+    try:
+        with open(keeper_json_path, "r") as data:
+            keeper_list = json.load(data)
+    except FileNotFoundError:
+        keeper_list = []
+
+    # keeper_list = PP['cheatsheet_text'].tolist() #  if row["is_keeper"] is True]
 
     col4 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-')],
             [sg.DropDown(PP['cheatsheet_text'].tolist(), key='-KEEPER-')] + [sg.DropDown([[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)], key='-KEEPER-PICK-')],
@@ -181,11 +187,15 @@ def KeeperPopUp():
     event, values = window.read()
     if event == "-SET-KEEPER-":
         pdb.set_trace()
-        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], "is_keeper"] = True
+        '-KEEPER-PICK-'
+        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], ["is_keeper", ""]] = True
         pdb.set_trace()
+
+
     print(event)
     print(values)
-
+    with open('data/keepers/keepers.json', 'w') as file:
+        json.dump(keeper_list, file, indent=4)
 
     return None if event != 'OK' else values
 
@@ -534,31 +544,8 @@ def TableSimulation():
                             pass
 
         elif event == "Set Keeper":
+            keepers = KeeperPopUp()
 
-            # if a valid table location entered, change that location's value
-            try:
-                player_name = window['Keeper Combo'].get()
-                # print(player_name)
-                player_index = next((i for (i, d) in enumerate(adp_list) if d["name"] == player_name), None)
-                keeper_dict = adp_list.pop(player_index)
-                keeper_dict["keeper"] = True
-                keeper_dict["keeper_location"] = (int(values['-Keeper Round-'] - 1), int(values['-Keeper Pick-'] - 1))
-                adp_list.append(keeper_dict)
-                db = np.array(adp_list)
-                db = np.reshape(db, (MAX_ROWS, 12))
-                db[1::2, :] = db[1::2, ::-1]
-                print(db)
-
-                # location = (int(values['inputrow']), int(values['inputcol']))
-                target_element = window[keeper_dict['keeper_location']]
-                new_value = f"{keeper_dict['name'].split(' ', 1)[0]}\n" \
-                            f"{keeper_dict['name'].split(' ', 1)[1]}\n" \
-                            f"{keeper_dict['position']} ({keeper_dict['team']}) {keeper_dict['bye']}"
-                if target_element is not None and new_value != '':
-                    target_element.update(new_value)
-
-            except:
-                pass
     # TODO uncomment this block
     """
     try:
