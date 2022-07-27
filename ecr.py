@@ -157,33 +157,20 @@ def merge_dfs(df1, df2, col_to_match, how="left"):
     df = pd.merge(df1, df2[cols_to_use], how=how, on=col_to_match)
     return df
 
-def get_player_pool():
-    start_time = time.time()
-    fpros_df = get_fpros_data(player_count=300)
-    adp_df = get_adp_df()
 
+def get_player_pool(player_count=300):
+    start_time = time.time()
+    fpros_df = get_fpros_data(player_count)
+    adp_df = get_adp_df()
 
     # remove kickers and defenses
     adp_kd = adp_df.loc[adp_df['position'].isin(["PK", "DEF"])]
 
-    #Fix Defensive Names
+    # Fix Defensive Names
     adp_kd.loc[adp_kd["position"] == "DEF", "last_name"] = adp_kd.name.str.split(' ').str[-1]
     adp_kd.loc[adp_kd["position"] == "DEF", "first_name"] = adp_kd.name.str.replace(' Defense', '')
 
-    # adp_d = adp_df.loc[adp_df['position'] == "DEF"]
-    # adp_d.loc[:, 'last_name'] = adp_d.loc[:, 'name'].str.split(' ').str[-1]
-    # def_names = adp_d['name'].tolist()
-    # d_first = [n.replace(' Defense', '') for n in def_names]
-    # d_last = [n.split(' ')[-1] for n in def_names]
-
-    #adp_d.loc[:, 'first_name'] = adp_d['name']
-    # adp_d['last_name'] = adp_d['name']
-    # adp_d.loc[adp_d. > 5, 'A'] = 1000
-
-    # d_firstname = adp_d.loc[:, ['name', 'first_name', 'last_name']]
-    # print(d_firstname)
-    # pdb.set_trace()
-
+    # Get ADP DF of only position groups
     adp_df = adp_df.loc[adp_df['position'].isin(["QB", "WR", "TE", "RB"])]
     # merge adp w/out K and D to the fpros dataframe
     draft_pool = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
@@ -207,9 +194,11 @@ def get_player_pool():
                                 draft_pool['position'] + ' (' + draft_pool['team'] + ') ' + \
                                 draft_pool['bye'].astype(str)
 
-
-
-
+    # Add in None values for columns to be used during the draft
+    draft_pool["is_keeper"] = None
+    draft_pool["pick_no"] = None
+    draft_pool["draft_slot"] = None
+    draft_pool["round"] = None
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
     return draft_pool

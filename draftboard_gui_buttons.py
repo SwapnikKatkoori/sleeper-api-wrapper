@@ -119,53 +119,12 @@ from sleeper_wrapper import Drafts, League, Players
 from ecr import get_fpros_data, merge_dfs, get_player_pool
 from ffcalc import get_adp_df
 
-BOARD_LENGTH = 192
+
 
 MAX_ROWS = 17
 MAX_COLS = 12
+BOARD_LENGTH = MAX_ROWS*MAX_COLS
 PP = get_player_pool()
-"""
-def get_player_pool():
-    # first get the fantasy pros data/projections as dataframe
-
-    fpros_df = get_fpros_data(player_count=225)
-    adp_df = get_adp_df()
-    adp_df.drop(['name', 'team', 'position', 'bye'], axis=1, inplace=True)
-    pool_df = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
-    pool_df.fillna(value="DEF", inplace=True)
-    pdb.set_trace()
-    # Then get the ADP Dataframe and Merge
-    # adp_df = get_adp_df()
-    # cols_to_use = adp_df.columns.difference(fpros_df.columns).to_list()
-    # cols_to_use.append("sleeper_id")
-    # pool_df = pd.merge(fpros_df, adp_df[cols_to_use], on="sleeper_id", how="left")
-    # nan_rows = pool_df[pool_df["name"].isnull()]
-    # nan_rows = adp_df[adp_df["name"].isnull()]
-
-    pool_df["button_text"] = pool_df['first_name'] + '\n' + pool_df['last_name'] + '\n' + pool_df['position'] + ' (' \
-                             + pool_df['team'] + ') ' + pool_df['bye'].astype(str)
-
-    # pool_df['name'] + "\n(" + pool_df['team'] + ")\n" + pool_df['bye'].astype(str)
-
-    pool_df.to_csv('data/player_pool/pool_df.csv')
-    # pdb.set_trace()
-    return pool_df
-"""
-
-
-def sort_table(table, cols):
-    """ sort a table by multiple columns
-        table: a list of lists (or tuple of tuples) where each inner list
-               represents a row
-        cols:  a list (or tuple) specifying the column numbers to sort by
-               e.g. (1,0) would sort by column 1, then by column 0
-    """
-    for col in reversed(cols):
-        try:
-            table = sorted(table, key=operator.itemgetter(col))
-        except Exception as e:
-            sg.popup_error('Error in sort_table', 'Exception in sort_table', e)
-    return table
 
 
 def get_mock_keepers(mock_id=856772332067360768):
@@ -176,6 +135,8 @@ def get_mock_keepers(mock_id=856772332067360768):
 def reorder_keepers(list_to_sort, keeper_list):
     print(f"Before Keeper Insert {len(list_to_sort)}")
     pop_count = 0
+    for k in keeper_list:
+        print(k)
     for k in keeper_list:
         k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
         k['position'] = k['metadata']['position']
@@ -199,8 +160,34 @@ def reorder_keepers(list_to_sort, keeper_list):
         list_to_sort.insert(k['pick_no'] - 1, k)
 
     print(f"Length after Keeper Insert {len(list_to_sort)}")
+    for l in list_to_sort:
+        print(l)
+    pdb.set_trace()
     return list_to_sort
 
+
+def KeeperPopUp():
+    PP["is_keeper"] = False
+    keeper_list = [row for row in PP] #  if row["is_keeper"] is True]
+
+    col4 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-')],
+            [sg.DropDown(PP['cheatsheet_text'].tolist(), key='-KEEPER-')] + [sg.DropDown([[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)], key='-KEEPER-PICK-')],
+            [sg.OK(), sg.Cancel()]]
+    col5 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True,
+                    expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)
+            ]]
+    window = sg.Window("Set Keepers", [[sg.Column(col4)] + [sg.Column(col5)]])
+
+    event, values = window.read()
+    if event == "-SET-KEEPER-":
+        pdb.set_trace()
+        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], "is_keeper"] = True
+        pdb.set_trace()
+    print(event)
+    print(values)
+
+
+    return None if event != 'OK' else values
 
 def TableSimulation():
     """
@@ -213,11 +200,11 @@ def TableSimulation():
     sg.set_options(element_padding=(0, 0))
 
     menu_def = [['File', ['Open', 'Save', 'Exit']],
+                ['Keepers', ['Set Keepers', 'Clear All Keepers']],
                 ['Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
                 ['Help', 'About...'], ]
 
-    MAX_ROWS = 17
-    MAX_COLS = 12
+
 
     BOARD_LENGTH = MAX_ROWS * MAX_COLS
     RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
@@ -345,7 +332,6 @@ def TableSimulation():
                       headings=['Tier', 'ECR', 'Pos', 'Team', 'Name', 'sleeper_id'],
                       col_widths=3,
                       visible_column_map=[True, True, True, True, False],
-                      cols_justification=None,
                       def_col_width=None,
                       auto_size_columns=True,
                       max_col_width=15,
@@ -514,6 +500,11 @@ def TableSimulation():
                     window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]], text=db[r, c]['button_text'])
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
+        elif event == 'Set Keepers':
+            keepers = KeeperPopUp()
+            # sg.fill_form_with_values(window=window, values_dict={"hi": "bye"})
+        elif event == 'Clear All Keepers':
+            sg.popup('Clear All Keepers')
         elif event == 'Open':
             filename = sg.popup_get_file(
                 'filename to open', no_window=True, file_types=(("CSV Files", "*.csv"),))
@@ -584,96 +575,3 @@ def TableSimulation():
 
 TableSimulation()
 
-"""
-
-
-"""
-"""
-    #OG coolumn layout
-    column_layout = [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
-                     [sg.B(button_text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"f"{db[r, c]['name'].split(' ', 1)[1]}\n"f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}",
-                         enable_events=True,
-                         size=(14, 0),
-                         p=(0, 0),
-                         border_width=1,
-                         button_color=BG_COLORS[db[r, c]["position"]],
-                         mouseover_colors="gray",
-                         highlight_colors=("black", "white"),
-                         disabled=False,
-                         # changed the disabled_button_color
-                         disabled_button_color="white on gray",
-                         auto_size_button=False,
-                         metadata={"is_clicked": False},
-                         key=(r, c)
-                     )
-                         for c in range(MAX_COL)] for r in range(MAX_ROWS)]
-    layout = [[sg.Menu(menu_def)],
-              [sg.Text('Weez Draftboard', font='Any 18'),
-
-               sg.Button('Load VBD', key="-Load-VBD-"),
-               sg.Button('Load ADP', key="-Load-ADP-"),
-               sg.Button('Refresh', key="-Refresh-"),
-               sg.Combo(values=[f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in drafted_list],
-                        size=15,
-                        enable_events=True,
-                        key="-Drafted-"),
-               sg.Text('Search: '),
-               sg.Input(key='-Search-', enable_events=True, focus=True, tooltip=filter_tooltip)],
-            [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
-    """
-"""
-remove from layout
-               sg.Combo(
-               values=[x['name'] for x in adp_list],
-               default_value=adp_list[0]['name'],
-               readonly=False,
-               size=(14, 10),
-               enable_events=True,
-               k='Keeper Combo'),
-           sg.Text('Round'),
-           sg.Combo(values=[x + 1 for x in range(MAX_ROWS)], default_value=1, key="-Keeper Round-"),
-           sg.Text('Pick'),
-           sg.Combo(values=[x + 1 for x in range(12)], default_value=1, key="-Keeper Pick-"),
-           sg.Button('Set Keeper'),
-# -------FROM SCRATCH-------- #
-col1 = sg.Column([
-    [sg.Frame('Draft Board: ', [[sg.T("  ", size=(5, 1), justification='left')] + [sg.B(button_text=draft_order[c+1], border_width=1, key=f"TEAM{c}", size=(14, 0)) for c in range(MAX_COL)]] + \
-    [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
-                 [sg.B(
-                     button_text=f"{db[r, c]['name'].split(' ', 1)[0]}\n"
-                                 f"{db[r, c]['name'].split(' ', 1)[1]}\n"
-                                 f"{db[r, c]['position']} ({db[r, c]['team']}) {db[r, c]['bye']}",
-                     enable_events=True,
-                     size=(14, 0),
-                     p=(0, 0),
-                     border_width=1,
-                     button_color=BG_COLORS[db[r, c]["position"]],
-                     mouseover_colors="gray",
-                     highlight_colors=("black", "white"),
-                     disabled=False,
-                     # changed the disabled_button_color
-                     disabled_button_color="white on gray",
-                     auto_size_button=False,
-                     metadata={"is_clicked": False},
-                     key=(r, c)
-                 )
-                     for c in range(MAX_COL)] for r in range(MAX_ROWS)])]])
-col2 = sg.Column([
-    [sg.Frame("Cheat Sheets: ", [sg.Multiline()])]])
-layout = [[sg.Menu(menu_def)],
-          [sg.Text('Weez Draftboard', font='Any 18'),
-
-           sg.Button('Load VBD', key="-Load-VBD-"),
-           sg.Button('Load ADP', key="-Load-ADP-"),
-           sg.Button('Refresh', key="-Refresh-"),
-           sg.Combo(values=[f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in drafted_list],
-                    size=15,
-                    enable_events=True,
-                    key="-Drafted-"),
-           sg.Text('Search: '),
-           sg.Input(key='-Search-', enable_events=True, focus=True, tooltip=filter_tooltip)],
-          [col1, col2]]
-          # [sg.Col(column_layout, size=(1200, 796), scrollable=True)]]
-
-
-"""
