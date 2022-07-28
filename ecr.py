@@ -6,6 +6,9 @@ import time
 from pandastable import Table
 from tkinter import *
 from ffcalc import get_sleeper_ids, get_adp_df
+import json
+
+
 
 def get_ecr_rankings(player_count=225):
     """
@@ -194,14 +197,46 @@ def get_player_pool(player_count=300):
                                 draft_pool['position'] + ' (' + draft_pool['team'] + ') ' + \
                                 draft_pool['bye'].astype(str)
 
-    # Add in None values for columns to be used during the draft
+    # Add in None values for Keeper columns
     draft_pool["is_keeper"] = None
     draft_pool["pick_no"] = None
     draft_pool["draft_slot"] = None
     draft_pool["round"] = None
+    # Open keeper list of dicts so that we can set the keeper value to True
+    keeper_list = open_keepers(get="list")
+    for row in keeper_list:
+        print(row)
+    # pdb.set_trace()
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
     return draft_pool
+
+def open_keepers(get=None):
+    keeper_json_path = Path('data/keepers/keepers.json')
+    try:
+        with open(keeper_json_path, "r") as data:
+            keeper_list = json.load(data)
+            print(f"Opened Keeper List: {keeper_list}")
+            keeper_list_text = [k["cheatsheet_text"] for k in keeper_list]
+    except FileNotFoundError:
+        keeper_list = []
+        keeper_list_text = []
+    if not get:
+        return keeper_list, keeper_list_text
+    elif get == "list":
+        return keeper_list
+    elif get == "text":
+        return keeper_list_text
+
+    else:
+        print("Can only accept 'list' or 'text'")
+        return None
+
+def clear_all_keepers():
+    keeper_list = []
+    with open('data/keepers/keepers.json', 'w') as file:
+        json.dump(keeper_list, file, indent=4)
+    return keeper_list
 
 """
 # ------------- GUI SETUP and func----------- #
@@ -211,6 +246,7 @@ def make_table(gui_df):
     table.autoResizeColumns()
     table.show()
 
+# clear_all_keepers()
 
 draft_pool = get_player_pool()
 window = Tk()
@@ -224,4 +260,3 @@ make_table(draft_pool)
 window.mainloop()
 
 """
-

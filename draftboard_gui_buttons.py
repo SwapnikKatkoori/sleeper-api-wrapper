@@ -116,7 +116,7 @@ import numpy as np
 from pathlib import Path
 import json
 from sleeper_wrapper import Drafts, League, Players
-from ecr import get_fpros_data, merge_dfs, get_player_pool
+from ecr import get_fpros_data, merge_dfs, get_player_pool, open_keepers, clear_all_keepers
 from ffcalc import get_adp_df
 
 
@@ -165,37 +165,64 @@ def reorder_keepers(list_to_sort, keeper_list):
     pdb.set_trace()
     return list_to_sort
 
+# db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
+            # db = np.reshape(db, (MAX_ROWS, 12))
+            # db[1::2, :] = db[1::2, ::-1]
+
+
 
 def KeeperPopUp():
-    keeper_json_path = Path('data/keepers/keepers.json')
-    try:
-        with open(keeper_json_path, "r") as data:
-            keeper_list = json.load(data)
-    except FileNotFoundError:
-        keeper_list = []
 
+    keeper_list = open_keepers(get="text")
     # keeper_list = PP['cheatsheet_text'].tolist() #  if row["is_keeper"] is True]
-
-    col4 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-')],
-            [sg.DropDown(PP['cheatsheet_text'].tolist(), key='-KEEPER-')] + [sg.DropDown([[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)], key='-KEEPER-PICK-')],
+    pick_list = [[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)]
+    #pdb.set_trace()
+    # print(pick_list)
+    # (start, stop, step)
+    col4 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
+            [sg.Button("Clear", key='-CLEAR-KEEPERS-', enable_events=True)],
+            [sg.DropDown(PP['cheatsheet_text'].tolist(), key='-KEEPER-')] +
+            [sg.DropDown(pick_list, key='-KEEPER-PICK-', default_value=pick_list[0])],
             [sg.OK(), sg.Cancel()]]
-    col5 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True,
-                    expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)
-            ]]
+    col5 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True)]]
     window = sg.Window("Set Keepers", [[sg.Column(col4)] + [sg.Column(col5)]])
 
     event, values = window.read()
     if event == "-SET-KEEPER-":
-        pdb.set_trace()
-        '-KEEPER-PICK-'
-        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], ["is_keeper", ""]] = True
-        pdb.set_trace()
+        # split the keeper-pick value for round, slot and calc for pick_no
+        rd, slot = ''.join(values["-KEEPER-PICK-"]).split('.')
+        rd, slot = int(rd), int(slot)
+        if rd % 2 == 0:
+            pick_no = (rd-1) * MAX_COLS + MAX_COLS-slot+1
+        else:
+            pick_no = (rd-1) * MAX_COLS + slot
 
+        # Assign the keeper values to the dataframe
+        k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
+        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], k_cols] = [True, rd, slot, pick_no]
 
+        # make the keeper list from the dataframe and then save to the JSON
+        keeper_list = PP.loc[PP["is_keeper"] == True].to_dict('records')
+
+        with open('data/keepers/keepers.json', 'w') as file:
+            json.dump(keeper_list, file, indent=4)
+
+        # get new keeper list text for text box
+        keeper_list_text = open_keepers(get="text")
+        window["-KEEPER-LIST-"].update(values=keeper_list_text)
+        # pdb.set_trace()
+        """
+        'round': 15, 'roster_id': None, 'player_id': '7606', 'picked_by': '339134645083856896', 'pick_no': 171, 'metadata': {'years_exp': '1', 'team': 'NYG', 'status': 'Active', 'sport': 'nfl', 'position': 'WR', 'player_id': '7606', 'number': '89', 'news_updated': '1654805457698', 'last_name': 'Toney', 'injury_status': 'Questionable', 'first_name': 'Kadarius'}, 
+        'is_keeper': None, 'draft_slot': 3
+        """
+
+    elif event == "-CLEAR-KEEPERS-":
+        keeper_list = clear_all_keepers()
+        window["-KEEPER-LIST-"].update(values=keeper_list)
     print(event)
     print(values)
-    with open('data/keepers/keepers.json', 'w') as file:
-        json.dump(keeper_list, file, indent=4)
+    print(keeper_list)
+
 
     return None if event != 'OK' else values
 
