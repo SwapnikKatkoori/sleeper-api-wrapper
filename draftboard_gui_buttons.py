@@ -132,9 +132,6 @@ def get_mock_keepers(mock_id=856772332067360768):
 
     return mock_draft.get_all_picks()
 
-
-
-
     print(f"Total Popped {pop_count}")
     # sorting the keeper list by the pick
     keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
@@ -161,7 +158,7 @@ def KeeperPopUp():
     # keeper_list = PP['cheatsheet_text'].tolist() #  if row["is_keeper"] is True]
     pick_list = [[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)]
 
-    col4 = [[sg.Listbox(not_kept_list, key='-KEEPER-', size=(20, 15), auto_size_text=True,
+    col4 = [[sg.Listbox(not_kept_list, key='-DRAFT-POOL-', size=(20, 15), auto_size_text=True,
                         select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]]
     col5 = [[sg.Text("Pick Player")],
             [sg.Button("Add", key='-ADD-KEEPER-', enable_events=True)],
@@ -181,10 +178,33 @@ def KeeperPopUp():
             save_keepers(PP.loc[PP["is_keeper"] == True].to_dict('records'))
             break
         elif event == "-ADD-KEEPER-":
+            rd, slot = ''.join(values["-KEEPER-PICK-"]).split('.')
+            rd, slot = int(rd), int(slot)
+            if rd % 2 == 0:
+                pick_no = (rd-1) * MAX_COLS + MAX_COLS-slot+1
+            else:
+                pick_no = (rd-1) * MAX_COLS + slot
             pdb.set_trace()
+            k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
+            k_name = ''.join(values["-DRAFT-POOL-"])
+            PP.loc[PP["name"] == k_name, k_cols] = [True, rd, slot, pick_no]
+            # pdb.set_trace()
+            keeper_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
+            not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
+            #
+            keeper_list_text = open_keepers(get="text")
+            window["-KEEPER-LIST-"].update(values=keeper_list)
+            window["-DRAFT-POOL-"].update(values=not_kept_list)
             pass
         elif event == "-REMOVE-KEEPER-":
-            pdb.set_trace()
+            k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
+            k_name = ''.join(values["-KEEPER-LIST-"])
+            PP.loc[PP["name"] == k_name, k_cols] = [False, None, None, None]
+            # pdb.set_trace()
+            keeper_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
+            not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
+            window["-KEEPER-LIST-"].update(values=keeper_list)
+            window["-DRAFT-POOL-"].update(values=not_kept_list)
             pass
         elif event == "-SET-KEEPER-":
             # split the keeper-pick value for round, slot and calc for pick_no
