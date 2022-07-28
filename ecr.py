@@ -9,7 +9,6 @@ from ffcalc import get_sleeper_ids, get_adp_df
 import json
 
 
-
 def get_ecr_rankings(player_count=225):
     """
     Return single dataframe with columns for superflex_rank, suplerflex_tier,
@@ -57,6 +56,7 @@ def get_ecr_rankings(player_count=225):
     # pdb.set_trace()
     ecr_sf_df = get_sleeper_ids(ecr_sf_df)
     return ecr_sf_df
+
 
 def clean_qb_df(qb_df):
     # lower case all column names
@@ -176,45 +176,77 @@ def get_player_pool(player_count=300):
     # Get ADP DF of only position groups
     adp_df = adp_df.loc[adp_df['position'].isin(["QB", "WR", "TE", "RB"])]
     # merge adp w/out K and D to the fpros dataframe
-    draft_pool = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
+    p_pool = merge_dfs(fpros_df, adp_df, "sleeper_id", how="outer")
     # Now merge kickers and defenses back in
-    draft_pool = pd.concat([draft_pool, adp_kd])
+    p_pool = pd.concat([p_pool, adp_kd])
 
     # Now time to clean up some ranking columns
-    draft_pool.sort_values(by=['adp_pick', 'superflex_rank_ecr'], na_position='last', inplace=True)
-    draft_pool.reset_index(drop=True, inplace=True)
-    draft_pool['adp_pick'] = draft_pool.index + 1
+    p_pool.sort_values(by=['adp_pick', 'superflex_rank_ecr'], na_position='last', inplace=True)
+    p_pool.reset_index(drop=True, inplace=True)
+    p_pool['adp_pick'] = p_pool.index + 1
 
-    draft_pool[['superflex_rank_ecr', 'superflex_tier_ecr']] = draft_pool[['superflex_rank_ecr', 'superflex_tier_ecr']].fillna(
+    p_pool[['superflex_rank_ecr', 'superflex_tier_ecr']] = p_pool[
+        ['superflex_rank_ecr', 'superflex_tier_ecr']].fillna(
         value=999).astype(int)
 
-    draft_pool['team'] = draft_pool['team'].fillna("FA")
-    draft_pool['pos_rank'] = draft_pool["pos_rank"].fillna("NA999")
-    # Now time to add the button_text and cheatsheet_text values
-    draft_pool["cheatsheet_text"] = draft_pool['pos_rank'] + ' ' + draft_pool['name'] + ' ' + draft_pool['team']
+    p_pool['team'] = p_pool['team'].fillna("FA")
+    p_pool['pos_rank'] = p_pool["pos_rank"].fillna("NA999")
 
-    draft_pool["button_text"] = draft_pool['first_name'] + '\n' + draft_pool['last_name'] + '\n' + \
-                                draft_pool['position'] + ' (' + draft_pool['team'] + ') ' + \
-                                draft_pool['bye'].astype(str)
+    # Now time to add the button_text and cheatsheet_text values
+    p_pool["cheatsheet_text"] = p_pool['pos_rank'] + ' ' + p_pool['name'] + ' ' + p_pool['team']
+    p_pool["button_text"] = p_pool['first_name'] + '\n' + p_pool['last_name'] + '\n' + p_pool[
+        'position'] + ' (' + p_pool['team'] + ') ' + p_pool['bye'].astype(str)
+
 
     # Add in None values for Keeper columns
     k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round']
     for k in k_cols:
-        draft_pool[k] = None
+        p_pool[k] = None
+
+
     # Open keeper list of dicts so that we can set the keeper value to True
     keeper_list = open_keepers(get="list")
-    # iterate over the keeper list to grab the dict values and assign to the main draft_pool dataframe
+
+    # iterate over the keeper list to grab the dict values and assign to the main player_pool dataframe
+    for p in keeper_list:
+        id = p['sleeper_id']
+        is_keeper = p['is_keeper']
+        pick_no = p['pick_no']
+        slot = p['draft_slot']
+        rd = p['round']
+        p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
+
+
+    """    
     for x in range(len(keeper_list)):
-        id = keeper_list[x]['sleeper_id']
+        pdb.set_trace()
+        id = keeper_list[x]['player_id']   # Fix this player_id/sleeper-id issue.  = keeper_list[x]['sleeper_id'] or 
         is_keeper = keeper_list[x]['is_keeper']
         pick_no = keeper_list[x]['pick_no']
         slot = keeper_list[x]['draft_slot']
         rd = keeper_list[x]['round']
-        draft_pool.loc[draft_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
+        p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
+
+    """
     # pdb.set_trace()
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
-    return draft_pool
+    return p_pool
+
+
+"""
+Need to figure out how to move keepers and draft pool players back and forth. 
+Need to figure out how to eliminate the player draft/round pick from the "round/slot" dropdown from the KeeperPopUp
+Need the Draft Pool and the Keeper Pool to be mutually exclusive and separate from the Player Pool. 
+        OR ----- Do we need to figure out just slices from the main p_pool dataframe?
+                    popping?  Slicing? what to do.
+
+
+
+
+
+
+"""
 
 def open_keepers(get=None):
     keeper_json_path = Path('data/keepers/keepers.json')
@@ -223,10 +255,11 @@ def open_keepers(get=None):
             keeper_list = json.load(data)
             # pdb.set_trace()
             print(f"Opened Keeper List: {keeper_list}")
-            keeper_list_text = [k["cheatsheet_text"] for k in keeper_list]
+            keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['player_id']}" for k in keeper_list]
     except FileNotFoundError:
         keeper_list = []
         keeper_list_text = []
+
     if not get:
         return keeper_list, keeper_list_text
     elif get == "list":
@@ -237,11 +270,17 @@ def open_keepers(get=None):
         print("Can only accept 'list' or 'text'")
         return None
 
+
 def clear_all_keepers():
     keeper_list = []
     with open('data/keepers/keepers.json', 'w') as file:
         json.dump(keeper_list, file, indent=4)
-    return keeper_list
+    print("keepers.json overwritten, set as []")
+
+
+
+
+
 
 """
 # ------------- GUI SETUP and func----------- #
@@ -264,4 +303,27 @@ make_table(draft_pool)
 
 window.mainloop()
 
+"""
+
+"""
+# ---- Old Func from Draftboard gui  ------ # 
+def reorder_keepers(list_to_sort, keeper_list):
+    print(f"Before Keeper Insert {len(list_to_sort)}")
+    pop_count = 0
+    for k in keeper_list:
+        print(k)
+    for k in keeper_list:
+        k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
+        k['position'] = k['metadata']['position']
+        k['team'] = k['metadata']['team']
+        for i, d in enumerate(list_to_sort):
+            try:
+                if d['sleeper_id'] == k['player_id']:
+                    k['bye'] = d['bye']
+                    list_to_sort.pop(i)
+                    pop_count += 1
+                    pass
+            except:
+                print("This Key Error")
+                pdb.set_trace()
 """

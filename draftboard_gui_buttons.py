@@ -129,28 +129,11 @@ PP = get_player_pool()
 
 def get_mock_keepers(mock_id=856772332067360768):
     mock_draft = Drafts(mock_id)
+
     return mock_draft.get_all_picks()
 
 
-def reorder_keepers(list_to_sort, keeper_list):
-    print(f"Before Keeper Insert {len(list_to_sort)}")
-    pop_count = 0
-    for k in keeper_list:
-        print(k)
-    for k in keeper_list:
-        k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
-        k['position'] = k['metadata']['position']
-        k['team'] = k['metadata']['team']
-        for i, d in enumerate(list_to_sort):
-            try:
-                if d['sleeper_id'] == k['player_id']:
-                    k['bye'] = d['bye']
-                    list_to_sort.pop(i)
-                    pop_count += 1
-                    pass
-            except:
-                print("This Key Error")
-                pdb.set_trace()
+
 
     print(f"Total Popped {pop_count}")
     # sorting the keeper list by the pick
@@ -172,65 +155,113 @@ def reorder_keepers(list_to_sort, keeper_list):
 
 
 def KeeperPopUp():
-
-    keeper_list = open_keepers(get="text")
+    global PP
+    keeper_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
+    not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
     # keeper_list = PP['cheatsheet_text'].tolist() #  if row["is_keeper"] is True]
     pick_list = [[f"{r + 1}.{c + 1}"] for r in range(MAX_ROWS) for c in range(MAX_COLS)]
-    #pdb.set_trace()
-    # print(pick_list)
-    # (start, stop, step)
-    col4 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
+
+    col4 = [[sg.Listbox(not_kept_list, key='-KEEPER-', size=(20, 15), auto_size_text=True,
+                        select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]]
+    col5 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
             [sg.Button("Clear", key='-CLEAR-KEEPERS-', enable_events=True)],
-            [sg.DropDown(PP['cheatsheet_text'].tolist(), key='-KEEPER-')] +
+            [sg.Button("Load Mock Keepers", key='-LOAD-MOCK-KEEPERS-', enable_events=True)],
             [sg.DropDown(pick_list, key='-KEEPER-PICK-', default_value=pick_list[0])],
-            [sg.OK(), sg.Cancel()]]
-    col5 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True)]]
-    window = sg.Window("Set Keepers", [[sg.Column(col4)] + [sg.Column(col5)]])
-
-    event, values = window.read()
-    if event == "-SET-KEEPER-":
-        # split the keeper-pick value for round, slot and calc for pick_no
-        rd, slot = ''.join(values["-KEEPER-PICK-"]).split('.')
-        rd, slot = int(rd), int(slot)
-        if rd % 2 == 0:
-            pick_no = (rd-1) * MAX_COLS + MAX_COLS-slot+1
-        else:
-            pick_no = (rd-1) * MAX_COLS + slot
-
-        # Assign the keeper values to the dataframe
-        k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
-        PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], k_cols] = [True, rd, slot, pick_no]
-        # pdb.set_trace()
-        # make the keeper list from the dataframe and then save to the JSON
-        keeper_list = PP.loc[PP["is_keeper"] == True].to_dict('records')
-        # pdb.set_trace()
-        with open('data/keepers/keepers.json', 'w') as file:
-            json.dump(keeper_list, file, indent=4)
-
-        # get new keeper list text for text box
-        keeper_list_text = open_keepers(get="text")
-        window["-KEEPER-LIST-"].update(values=keeper_list_text)
-        # pdb.set_trace()
-        """
-        'round': 15, 'roster_id': None, 'player_id': '7606', 'picked_by': '339134645083856896', 'pick_no': 171, 'metadata': {'years_exp': '1', 'team': 'NYG', 'status': 'Active', 'sport': 'nfl', 'position': 'WR', 'player_id': '7606', 'number': '89', 'news_updated': '1654805457698', 'last_name': 'Toney', 'injury_status': 'Questionable', 'first_name': 'Kadarius'}, 
-        'is_keeper': None, 'draft_slot': 3
-        """
-
-    elif event == "-CLEAR-KEEPERS-":
-        keeper_list = clear_all_keepers()
-        window["-KEEPER-LIST-"].update(values=keeper_list)
-    print(event)
-    print(values)
-    print(keeper_list)
+            [sg.OK()]]
+    col6 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True)]]
+    window = sg.Window("Set Keepers", [[sg.Column(col4)] + [sg.Column(col5)] + [sg.Column(col6)]])
 
 
-    return None if event != 'OK' else values
+    while True:
+        event, values = window.read()
+        if event in (sg.WINDOW_CLOSED, "OK"):
+            save_keepers(PP.loc[PP["is_keeper"] == True].to_dict('records'))
+            break
+
+        elif event == "-SET-KEEPER-":
+            # split the keeper-pick value for round, slot and calc for pick_no
+            rd, slot = ''.join(values["-KEEPER-PICK-"]).split('.')
+            rd, slot = int(rd), int(slot)
+            if rd % 2 == 0:
+                pick_no = (rd-1) * MAX_COLS + MAX_COLS-slot+1
+            else:
+                pick_no = (rd-1) * MAX_COLS + slot
+
+            # Assign the keeper values to the dataframe
+            k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
+            k_name = ''.join(values["-KEEPER-"])
+            PP.loc[PP["name"] == k_name, k_cols] = [True, rd, slot, pick_no]
+            # pdb.set_trace()
+
+            # make the keeper list from the dataframe and then save to the JSON
+            keeper_list = PP.loc[PP["is_keeper"] == True].to_dict('records')
+            # pdb.set_trace()
+            with open('data/keepers/keepers.json', 'w') as file:
+                json.dump(keeper_list, file, indent=4)
+
+            # get new keeper list text for text box
+            keeper_list_text = open_keepers(get="text")
+            window["-KEEPER-LIST-"].update(values=keeper_list_text)
+            # pdb.set_trace()
+            """
+            'round': 15, 'roster_id': None, 'player_id': '7606', 'picked_by': '339134645083856896', 'pick_no': 171, 'is_keeper': None, 'draft_slot': 3
+            """
+        elif event == "-CLEAR-KEEPERS-":
+            reset_keepers() # resets the keeper values in the json and the dataframe
+            keeper_list_text = open_keepers(get="text")  # This opens empty list
+            window["-KEEPER-LIST-"].update(values=keeper_list_text)
+        elif event == "-LOAD-MOCK-KEEPERS-":
+            # PP Switch the keeper values on/off
+            reset_keepers() # resets the keeper values in the json and the dataframe
+            # get the mock keeper list
+            mock_keepers = get_mock_keepers(855693188285992960)
+            # fix the column names
+            for k in mock_keepers:
+                k['sleeper_id'] = k['player_id']
+                k['is_keeper'] = True
+            # save the mock keepers to the json file
+            save_keepers(mock_keepers)
+            keeper_list, keeper_list_text = open_keepers()
+            # iterate over the keeper list to grab the dict values and assign to the main player_pool dataframe
+            k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round']
+            for p in keeper_list:
+                id = p['sleeper_id']
+                is_keeper = p['is_keeper']
+                pick_no = p['pick_no']
+                slot = p['draft_slot']
+                rd = p['round']
+                PP.loc[PP['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
+
+            window["-KEEPER-LIST-"].update(values=keeper_list_text)
+            # print(mock_keepers)
+        print(event)
+        print(values)
+        print(keeper_list)
+    window.close()
+
+def reset_keepers():
+    clear_all_keepers()  # this clears the keeper_list as [] and overwrites the keepers.json with empty list
+    # this resets the columns in the PP DataFrame
+    k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round']
+    for k in k_cols:
+        PP[k] = None
+    # pdb.set_trace()
+
+
+
+
+def save_keepers(keeper_list):
+    keeper_path = Path('data/keepers/keepers.json')
+    print(f"Saving {len(keeper_list)} keepers to {keeper_path}")
+    with open(keeper_path, 'w') as file:
+        json.dump(keeper_list, file, indent=4)
+    pass
 
 def TableSimulation():
     """
     Display data in a table format
     """
-
+    global PP
     sg.popup_quick_message('Hang on for a moment, this will take a bit to create....', auto_close=True,
                            non_blocking=True, font='Default 18')
 
@@ -270,8 +301,11 @@ def TableSimulation():
     """
     draft = Drafts(DRAFT_ID_2022_WEEZ_LEAGUE)
     draft_info = draft.get_specific_draft()
-    draft_order = draft_info['draft_order']
-    draft_order = {v: user_map[k] for k, v in draft_order.items()}
+    try:
+        draft_order = draft_info['draft_order']
+        draft_order = {v: user_map[k] for k, v in draft_order.items()}
+    except:
+        draft_order = [x for x in range(MAX_COLS)]
     # ---- draft_order to be used to create labels above the draft board  -----#
 
     """
@@ -365,58 +399,12 @@ def TableSimulation():
     ecr_data = ecr_cheat.values.tolist()
     ecr_columns = ecr_cheat.columns.tolist()
     # pdb.set_trace()
-    col3 = [[sg.Table(ecr_data,
-                      headings=['Tier', 'ECR', 'Pos', 'Team', 'Name', 'sleeper_id'],
-                      col_widths=3,
-                      visible_column_map=[True, True, True, True, False],
-                      def_col_width=None,
-                      auto_size_columns=True,
-                      max_col_width=15,
-                      select_mode=None,
-                      display_row_numbers=False,
-                      num_rows=min(100, len(ecr_data)),
-                      row_height=10,
-                      font=None,
-                      justification="left",
-                      text_color=None,
-                      background_color=None,
-                      alternating_row_color=None,
-                      selected_row_colors=(None, None),
-                      header_text_color=None,
-                      header_background_color=None,
-                      header_font=None,
-                      header_border_width=None,
-                      header_relief=None,
-                      row_colors=None,
-                      vertical_scroll_only=False,
-                      hide_vertical_scroll=False,
-                      border_width=None,
-                      sbar_trough_color=None,
-                      sbar_background_color=None,
-                      sbar_arrow_color=None,
-                      sbar_width=None,
-                      sbar_arrow_width=None,
-                      sbar_frame_color=None,
-                      sbar_relief=None,
-                      size=(None, None),
-                      s=(600, 796),
-                      change_submits=False,
-                      enable_events=False,
-                      enable_click_events=True,
-                      right_click_selects=True,
-                      bind_return_key=False,
-                      pad=None,
-                      p=None,
-                      key="-TABLE-",
-                      k=None,
-                      tooltip=None,
-                      right_click_menu=None,
-                      expand_x=True,
-                      expand_y=True,
-                      visible=True,
-                      metadata=None)
-
-             ]]
+    col3 = [[sg.Table(ecr_data, headings=['Tier', 'ECR', 'Pos', 'Team', 'Name', 'sleeper_id'],
+                      col_widths=[3, 3, 3, 3, 3, 3], visible_column_map=[True, True, True, True, False],
+                      auto_size_columns=True, max_col_width=15, display_row_numbers=False,
+                      num_rows=min(100, len(ecr_data)), row_height=10, justification="left", s=(600, 796),
+                      key="-TABLE-", expand_x=True, expand_y=True, visible=True)
+            ]]
     col1 = sg.Column(col1, size=(1500, 800), vertical_alignment="bottom", justification="bottom",
                      element_justification="center")
     col2 = sg.Column(col2, size=(150, 796))
@@ -434,9 +422,8 @@ def TableSimulation():
                         size=15,
                         enable_events=True,
                         key="-Drafted-")],
-              [sg.Column([[col1] + [cheat_frame]], vertical_alignment="bottom", justification="bottom", scrollable=True, size=(
-                  1500,
-                  800))]]  # , size=(1200, 796), scrollable=False), sg.Column(col2, size=(150, 796), scrollable=False)]]
+              [sg.Column([[col1] + [cheat_frame]], vertical_alignment="bottom", justification="bottom", scrollable=True,
+                         size=(1500, 800))]]
 
     window = sg.Window('Table', layout, return_keyboard_events=True, resizable=True, scaling=1)
     # window["-TABLE-"].bind('<Double-Button-1>', "+-double click-")
@@ -538,8 +525,9 @@ def TableSimulation():
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Set Keepers':
-            keepers = KeeperPopUp()
+            KeeperPopUp()
             # sg.fill_form_with_values(window=window, values_dict={"hi": "bye"})
+
         elif event == 'Clear All Keepers':
             sg.popup('Clear All Keepers')
         elif event == 'Open':
