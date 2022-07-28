@@ -163,7 +163,10 @@ def KeeperPopUp():
 
     col4 = [[sg.Listbox(not_kept_list, key='-KEEPER-', size=(20, 15), auto_size_text=True,
                         select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]]
-    col5 = [[sg.Text("Pick Player")],[sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
+    col5 = [[sg.Text("Pick Player")],
+            [sg.Button("Add", key='-ADD-KEEPER-', enable_events=True)],
+            [sg.Button("Remove", key='-REMOVE-KEEPER-', enable_events=True)],
+            [sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
             [sg.Button("Clear", key='-CLEAR-KEEPERS-', enable_events=True)],
             [sg.Button("Load Mock Keepers", key='-LOAD-MOCK-KEEPERS-', enable_events=True)],
             [sg.DropDown(pick_list, key='-KEEPER-PICK-', default_value=pick_list[0])],
@@ -177,7 +180,12 @@ def KeeperPopUp():
         if event in (sg.WINDOW_CLOSED, "OK"):
             save_keepers(PP.loc[PP["is_keeper"] == True].to_dict('records'))
             break
-
+        elif event == "-ADD-KEEPER-":
+            pdb.set_trace()
+            pass
+        elif event == "-REMOVE-KEEPER-":
+            pdb.set_trace()
+            pass
         elif event == "-SET-KEEPER-":
             # split the keeper-pick value for round, slot and calc for pick_no
             rd, slot = ''.join(values["-KEEPER-PICK-"]).split('.')
