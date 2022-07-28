@@ -200,10 +200,10 @@ def KeeperPopUp():
         # Assign the keeper values to the dataframe
         k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
         PP.loc[PP["cheatsheet_text"] == values["-KEEPER-"], k_cols] = [True, rd, slot, pick_no]
-
+        # pdb.set_trace()
         # make the keeper list from the dataframe and then save to the JSON
         keeper_list = PP.loc[PP["is_keeper"] == True].to_dict('records')
-
+        # pdb.set_trace()
         with open('data/keepers/keepers.json', 'w') as file:
             json.dump(keeper_list, file, indent=4)
 

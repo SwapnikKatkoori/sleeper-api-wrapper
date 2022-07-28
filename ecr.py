@@ -198,14 +198,19 @@ def get_player_pool(player_count=300):
                                 draft_pool['bye'].astype(str)
 
     # Add in None values for Keeper columns
-    draft_pool["is_keeper"] = None
-    draft_pool["pick_no"] = None
-    draft_pool["draft_slot"] = None
-    draft_pool["round"] = None
+    k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round']
+    for k in k_cols:
+        draft_pool[k] = None
     # Open keeper list of dicts so that we can set the keeper value to True
     keeper_list = open_keepers(get="list")
-    for row in keeper_list:
-        print(row)
+    # iterate over the keeper list to grab the dict values and assign to the main draft_pool dataframe
+    for x in range(len(keeper_list)):
+        id = keeper_list[x]['sleeper_id']
+        is_keeper = keeper_list[x]['is_keeper']
+        pick_no = keeper_list[x]['pick_no']
+        slot = keeper_list[x]['draft_slot']
+        rd = keeper_list[x]['round']
+        draft_pool.loc[draft_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
     # pdb.set_trace()
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
@@ -216,6 +221,7 @@ def open_keepers(get=None):
     try:
         with open(keeper_json_path, "r") as data:
             keeper_list = json.load(data)
+            # pdb.set_trace()
             print(f"Opened Keeper List: {keeper_list}")
             keeper_list_text = [k["cheatsheet_text"] for k in keeper_list]
     except FileNotFoundError:
@@ -227,7 +233,6 @@ def open_keepers(get=None):
         return keeper_list
     elif get == "text":
         return keeper_list_text
-
     else:
         print("Can only accept 'list' or 'text'")
         return None
