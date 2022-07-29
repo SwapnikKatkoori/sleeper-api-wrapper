@@ -210,6 +210,8 @@ def get_player_pool(player_count=400):
 
     # iterate over the keeper list to grab the dict values and assign to the main player_pool dataframe
     for p in keeper_list:
+        if 'player_id' in p.keys():
+            p['sleeper_id'] = p['player_id']
         id = p['sleeper_id']
         is_keeper = p['is_keeper']
         pick_no = p['pick_no']
@@ -221,24 +223,57 @@ def get_player_pool(player_count=400):
         except:
             print(board_loc)
             pdb.set_trace()
-            #p_pool = p_pool.astype({'board_loc': tuple})
-    """    
-    for x in range(len(keeper_list)):
-        pdb.set_trace()
-        id = keeper_list[x]['player_id']   # Fix this player_id/sleeper-id issue.  = keeper_list[x]['sleeper_id'] or 
-        is_keeper = keeper_list[x]['is_keeper']
-        pick_no = keeper_list[x]['pick_no']
-        slot = keeper_list[x]['draft_slot']
-        rd = keeper_list[x]['round']
-        p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
+    # now add the adp_k_pick column
+    # p_pool.sort_values(by=['adp_pick'], ascending=True, inplace=True)
 
-    """
     p_pool.dropna(subset=["name", "button_text"], inplace=True)
+
+    # MOCK - 855693188285992960; 858792885288538112; 858793089177886720
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
     return p_pool
 
 
+def reorder_keepers(key, p_pool):
+    p_pool.sort_values(by=[key], ascending=True, inplace=True)
+
+
+    return
+
+    """
+    print(f"Before Keeper Insert {len(list_to_sort)}")
+    pop_count = 0
+    # pdb.set_trace()
+    for k in keeper_list:
+        print(k)
+    for k in keeper_list:
+        # k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
+        # k['position'] = k['metadata']['position']
+        # k['team'] = k['metadata']['team']
+        for i, d in enumerate(list_to_sort):
+            try:
+                if d['sleeper_id'] == k['sleeper_id']:
+                    k['bye'] = d['bye']
+                    list_to_sort.pop(i)
+                    pop_count += 1
+                    pass
+            except:
+                print("This Key Error")
+                pdb.set_trace()
+
+    print(f"Total Popped {pop_count}")
+    # sorting the keeper list by the pick
+    keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
+    # inserting all keepers in keeper_list back into adp_list
+    for k in keeper_list:
+        list_to_sort.insert(k['pick_no'] - 1, k)
+
+    print(f"Length after Keeper Insert {len(list_to_sort)}")
+    for l in list_to_sort:
+        print(l)
+    # pdb.set_trace()
+    return list_to_sort
+"""
 """
 Need to figure out how to move keepers and draft pool players back and forth. 
 Need to figure out how to eliminate the player draft/round pick from the "round/slot" dropdown from the KeeperPopUp
@@ -261,6 +296,12 @@ def open_keepers(get=None):
             # pdb.set_trace()
             print(f"Opened Keeper List: {keeper_list}")
             keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['sleeper_id']}" for k in keeper_list]
+    except KeyError:
+        with open(keeper_json_path, "r") as data:
+            keeper_list = json.load(data)
+            # pdb.set_trace()
+            print(f"Opened Keeper List: {keeper_list}")
+            keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['player_id']}" for k in keeper_list]
     except FileNotFoundError:
         keeper_list = []
         keeper_list_text = []

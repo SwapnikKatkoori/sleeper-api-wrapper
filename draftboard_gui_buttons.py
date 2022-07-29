@@ -116,7 +116,7 @@ import numpy as np
 from pathlib import Path
 import json
 from sleeper_wrapper import Drafts, League, Players
-from ecr import get_fpros_data, merge_dfs, get_player_pool, open_keepers, clear_all_keepers
+from ecr import get_fpros_data, merge_dfs, get_player_pool, open_keepers, clear_all_keepers, reorder_keepers
 from ffcalc import get_adp_df
 from pandastable import Table
 from tkinter import *
@@ -303,39 +303,7 @@ def save_keepers(keeper_list):
         json.dump(keeper_list, file, indent=4)
     pass
 
-def reorder_keepers(list_to_sort, keeper_list):
-    print(f"Before Keeper Insert {len(list_to_sort)}")
-    pop_count = 0
-    # pdb.set_trace()
-    for k in keeper_list:
-        print(k)
-    for k in keeper_list:
-        # k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
-        # k['position'] = k['metadata']['position']
-        # k['team'] = k['metadata']['team']
-        for i, d in enumerate(list_to_sort):
-            try:
-                if d['sleeper_id'] == k['sleeper_id']:
-                    k['bye'] = d['bye']
-                    list_to_sort.pop(i)
-                    pop_count += 1
-                    pass
-            except:
-                print("This Key Error")
-                pdb.set_trace()
 
-    print(f"Total Popped {pop_count}")
-    # sorting the keeper list by the pick
-    keeper_list = sorted(keeper_list, key=lambda k: k['pick_no'])
-    # inserting all keepers in keeper_list back into adp_list
-    for k in keeper_list:
-        list_to_sort.insert(k['pick_no'] - 1, k)
-
-    print(f"Length after Keeper Insert {len(list_to_sort)}")
-    for l in list_to_sort:
-        print(l)
-    # pdb.set_trace()
-    return list_to_sort
 def TableSimulation():
     """
     Display data in a table format
@@ -373,7 +341,7 @@ def TableSimulation():
     """
     Get all picks in sleeper draft
     """
-    DRAFT_ID = 856772332067360768  # mock
+    DRAFT_ID = 858793089177886720  # 855693188285992960  # mock 858792885288538112
     DRAFT_ID_2022_WEEZ_LEAGUE = 850087629952249857  # 854953046042583040
 
     """
@@ -391,32 +359,25 @@ def TableSimulation():
     """
     Now create draft for the mock draft we are using
     """
-    draft = Drafts(DRAFT_ID_2022_WEEZ_LEAGUE)
-    drafted_list = []  # draft.get_all_picks()
-    dp = PP.loc[PP["is_keeper"] != True]  # .to_dict("records")
-    kp = PP.loc[PP["is_keeper"] == True]  # .to_dict("records")
-    dp.sort_values(by=['adp_pick'], ascending=True, na_position='last', inplace=True)
-    dp.reset_index(drop=True, inplace=True)
-    kp.sort_values(by=['pick_no'], ascending=True, na_position='last', inplace=True)
-    kp.reset_index(drop=True, inplace=True)
-    kp_pick_no = kp['pick_no'].tolist()
-    dp_pick_no = [n for n in range(len(dp)) if n not in kp_pick_no]
-    pdb.set_trace()
-    dp.loc[:len(dp_pick_no), 'pick_no'] = dp_pick_no
-    adp_df = pd.concat([dp, kp], axis=0)
-    print(adp_df.head())
-    #print(kp.head())
-    pdb.set_trace()
-    PP.sort_values(by=['adp_pick'], ascending=True, na_position='last', inplace=True)
-    adp_list = reorder_keepers(adp_pool, keeper_pool)
-    #
-    # for keeper in keeper_pool:
-    # adp_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
-    adp_db = np.array(adp_list[:MAX_ROWS*MAX_COLS])
+    draft = Drafts(DRAFT_ID)
+    drafted_list = draft.get_all_picks()
+    non_kept_picks = [n + 1 for n in range(len(PP)) if n + 1 not in PP['pick_no'].to_list()]
+
+    PP['adp_pick_no'] = PP["pick_no"]
+    PP.sort_values(by=['adp_pick'], ascending=True, inplace=True)
+    PP.loc[PP["is_keeper"] != True, 'adp_pick_no'] = non_kept_picks
+    PP.sort_values(by='adp_pick_no', ascending=True, inplace=True)
+    adp_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
     adp_db = np.reshape(adp_db, (MAX_ROWS, MAX_COLS))
-    PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
+    adp_db[1::2, :] = adp_db[1::2, ::-1]
+
+    PP['ecr_pick_no'] = PP["pick_no"]
+    PP.sort_values(by=['superflex_rank_ecr'], ascending=True, inplace=True)
+    PP.loc[PP["is_keeper"] != True, 'ecr_pick_no'] = non_kept_picks
+    PP.sort_values(by='ecr_pick_no', ascending=True, inplace=True)
     vbd_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
     vbd_db = np.reshape(vbd_db, (MAX_ROWS, MAX_COLS))
+    vbd_db[1::2, :] = vbd_db[1::2, ::-1]
 
     db = np.empty([MAX_ROWS, MAX_COLS])
     db = np.reshape(db, (MAX_ROWS, MAX_COLS))
@@ -538,7 +499,7 @@ def TableSimulation():
             break
         elif event in ("-Refresh-", sg.TIMEOUT_KEY):
             # drafted = keeper_list
-            drafted = []  # [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
+            drafted = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
             window["-Drafted-"].update(values=drafted)
             # for loop to set the drafted players as "clicked"
             for c in range(MAX_COLS):
@@ -661,16 +622,16 @@ def TableSimulation():
             KeeperPopUp()
 
     # TODO uncomment this block
-    """
+
     try:
         print(draft.get_all_picks())
         drafted_list = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
         print(drafted_list[-1])
     except:
         pdb.set_trace()
-    # window["-Drafted-"].update(values=drafted_list)
-    
-    """
+    window["-Drafted-"].update(values=drafted_list)
+
+
     window.close()
 
 
