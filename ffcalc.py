@@ -22,6 +22,8 @@ def get_sleeper_ids(df):
     for idx, row in df.iterrows():
         if row["team"] == "JAC":
             df.loc[idx, "team"] = "JAX"
+        if row['name'] == "Kyle Rudolph":
+            row["team"] == "TB"
         if row["team"] == "FA":
             df.loc[idx, "team"] = None
         new_name = re.sub(r'\W+', '', row['name']).lower()

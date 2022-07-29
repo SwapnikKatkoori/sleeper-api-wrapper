@@ -161,7 +161,7 @@ def merge_dfs(df1, df2, col_to_match, how="left"):
     return df
 
 
-def get_player_pool(player_count=300):
+def get_player_pool(player_count=400):
     start_time = time.time()
     fpros_df = get_fpros_data(player_count)
     adp_df = get_adp_df()
@@ -228,7 +228,7 @@ def get_player_pool(player_count=300):
         p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
 
     """
-    # pdb.set_trace()
+    p_pool.dropna(subset=["name", "button_text"], inplace=True)
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
     return p_pool
@@ -282,7 +282,7 @@ def clear_all_keepers():
 
 
 
-"""
+
 # ------------- GUI SETUP and func----------- #
 def make_table(gui_df):
     # Table Func for GUI
@@ -291,7 +291,7 @@ def make_table(gui_df):
     table.show()
 
 # clear_all_keepers()
-
+"""
 draft_pool = get_player_pool()
 window = Tk()
 window.title("Sleeper Project")

@@ -118,13 +118,15 @@ import json
 from sleeper_wrapper import Drafts, League, Players
 from ecr import get_fpros_data, merge_dfs, get_player_pool, open_keepers, clear_all_keepers
 from ffcalc import get_adp_df
-
+from pandastable import Table
+from tkinter import *
 
 
 MAX_ROWS = 17
 MAX_COLS = 12
 BOARD_LENGTH = MAX_ROWS*MAX_COLS
 PP = get_player_pool()
+
 
 
 def get_mock_keepers(mock_id=856772332067360768):
@@ -145,20 +147,21 @@ def get_mock_keepers(mock_id=856772332067360768):
     pdb.set_trace()
     return list_to_sort
 
-# db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
-            # db = np.reshape(db, (MAX_ROWS, 12))
-            # db[1::2, :] = db[1::2, ::-1]
+def make_pick_list():
+    pl = [f"{r + 1}.{c + 1}" for r in range(MAX_ROWS) for c in range(MAX_COLS)]
+    pl = np.array(pl)
+    pl = np.reshape(pl, (MAX_ROWS, MAX_COLS))
+    pl[1::2, :] = pl[1::2, ::-1]
+    pl = pl.flatten()
 
-
+    return pl.tolist()
 
 def KeeperPopUp():
     global PP
     keeper_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
     not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
-
-
     # Create pick_list list for window["-KEEPER-PICK-"]
-    pick_list = [f"{r + 1}.{c + 1}" for r in range(MAX_ROWS) for c in range(MAX_COLS)]
+    pick_list = make_pick_list()
     # Create a list of the already established keeper picks and pop them from the pick_list
     kept_picks = PP["pick_no"].loc[PP["is_keeper"] == True].to_list()
     for pick in kept_picks:
@@ -177,8 +180,6 @@ def KeeperPopUp():
             [sg.OK()]]
     col6 = [[sg.Listbox(keeper_list, key='-KEEPER-LIST-', size=(20, 15), auto_size_text=True)]]
     window = sg.Window("Set Keepers", [[sg.Column(col4)] + [sg.Column(col5)] + [sg.Column(col6)]])
-
-
     while True:
         event, values = window.read()
         if event in (sg.WINDOW_CLOSED, "OK"):
@@ -294,9 +295,6 @@ def reset_keepers():
         PP[k] = None
     # pdb.set_trace()
 
-
-
-
 def save_keepers(keeper_list):
     keeper_path = Path('data/keepers/keepers.json')
     print(f"Saving {len(keeper_list)} keepers to {keeper_path}")
@@ -315,6 +313,7 @@ def TableSimulation():
     sg.set_options(element_padding=(0, 0))
 
     menu_def = [['File', ['Open', 'Save', 'Exit']],
+                ['Player Pool', ['View Player Pool']],
                 ['Keepers', ['Set Keepers', 'Clear All Keepers']],
                 ['Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
                 ['Help', 'About...'], ]
@@ -358,7 +357,7 @@ def TableSimulation():
     """
     Now create draft for the mock draft we are using
     """
-    draft = Drafts(DRAFT_ID)
+    draft = Drafts(DRAFT_ID_2022_WEEZ_LEAGUE)
     drafted_list = draft.get_all_picks()
     keeper_list = get_mock_keepers()
 
@@ -368,13 +367,14 @@ def TableSimulation():
     PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
     vbd_db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
     vbd_db = np.reshape(vbd_db, (MAX_ROWS, MAX_COLS))
+
     db = np.empty([MAX_ROWS, MAX_COLS])
-
-
-    # pdb.set_trace()
     db = np.reshape(db, (MAX_ROWS, MAX_COLS))
     db[1::2, :] = db[1::2, ::-1]
     db = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
+    k = PP.loc[PP["is_keeper"] == True].to_dict("records")
+    for p in k:
+        db[p["round"]-1, p["draft_slot"]-1] = {"button_text": p["button_text"], "position": p["position"]}
 
 
     """
@@ -393,7 +393,7 @@ def TableSimulation():
     # t2 = PP[PP["position"] == "RB"].T.groupby('position_tier_ecr')['name'].apply(list)
     rd = PP[PP["position"] == "RB"].T
     """
-    rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
+    # rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
     rb_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
     wr_list = PP[PP["position"] == "WR"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
     qb_list = PP[PP["position"] == "QB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
@@ -552,10 +552,6 @@ def TableSimulation():
                         text=adp_db[r, c]['button_text']
                     )
         elif event == "-Load-VBD-":
-            # PP.sort_values(by="superflex_rank_ecr", ascending=True, inplace=True)
-            # db = np.array(PP[:MAX_ROWS * MAX_COLS].to_dict("records"))
-            # db = np.reshape(db, (MAX_ROWS, 12))
-            # db[1::2, :] = db[1::2, ::-1]
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
                     window[(r, c)].update(button_color=BG_COLORS[vbd_db[r, c]["position"]],
@@ -569,12 +565,13 @@ def TableSimulation():
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
                     window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]], text=db[r, c]['button_text'])
+        elif event == "View Player Pool":
+            pass
+            # ViewPlayerPool()
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Set Keepers':
             KeeperPopUp()
-            # sg.fill_form_with_values(window=window, values_dict={"hi": "bye"})
-
         elif event == 'Clear All Keepers':
             sg.popup('Clear All Keepers')
         elif event == 'Open':
@@ -604,9 +601,8 @@ def TableSimulation():
                                 target_element.update(new_value)
                         except:
                             pass
-
         elif event == "Set Keeper":
-            keepers = KeeperPopUp()
+            KeeperPopUp()
 
     # TODO uncomment this block
     """
