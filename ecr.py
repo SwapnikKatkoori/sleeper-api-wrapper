@@ -199,7 +199,8 @@ def get_player_pool(player_count=400):
 
 
     # Add in None values for Keeper columns
-    k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round']
+    # board_loc will eventually be the tuple that can be used to place on the draftboard array
+    k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round', 'board_loc']
     for k in k_cols:
         p_pool[k] = None
 
@@ -214,9 +215,13 @@ def get_player_pool(player_count=400):
         pick_no = p['pick_no']
         slot = p['draft_slot']
         rd = p['round']
-        p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd]
-
-
+        board_loc = "hi"
+        try:
+            p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd, board_loc]
+        except:
+            print(board_loc)
+            pdb.set_trace()
+            #p_pool = p_pool.astype({'board_loc': tuple})
     """    
     for x in range(len(keeper_list)):
         pdb.set_trace()
@@ -255,7 +260,7 @@ def open_keepers(get=None):
             keeper_list = json.load(data)
             # pdb.set_trace()
             print(f"Opened Keeper List: {keeper_list}")
-            keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['player_id']}" for k in keeper_list]
+            keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['sleeper_id']}" for k in keeper_list]
     except FileNotFoundError:
         keeper_list = []
         keeper_list_text = []

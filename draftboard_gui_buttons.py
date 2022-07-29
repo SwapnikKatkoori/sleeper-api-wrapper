@@ -162,10 +162,16 @@ def KeeperPopUp():
     not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
     # Create pick_list list for window["-KEEPER-PICK-"]
     pick_list = make_pick_list()
+
     # Create a list of the already established keeper picks and pop them from the pick_list
     kept_picks = PP["pick_no"].loc[PP["is_keeper"] == True].to_list()
-    for pick in kept_picks:
-        pick_list.pop(pick-1)
+    kept_picks.sort(reverse=True)
+    print(kept_picks)
+    try:
+        for pick in kept_picks:
+            pick_list.pop(pick-1)
+    except:
+        pdb.set_trace()
 
 
     col4 = [[sg.Listbox(not_kept_list, key='-DRAFT-POOL-', size=(20, 15), auto_size_text=True,
@@ -198,6 +204,8 @@ def KeeperPopUp():
             k_cols = ["is_keeper", "round", "draft_slot", "pick_no"]
             k_name = ''.join(values["-DRAFT-POOL-"])
             PP.loc[PP["name"] == k_name, k_cols] = [True, rd, slot, pick_no]
+
+            # PP["board_loc"] = PP[[= k_name, "board_loc"] = PP.loc[PP["name"] == k_name
             # pdb.set_trace()
             keeper_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
             not_kept_list = PP.loc[PP["is_keeper"] != True, 'name'].to_list()
@@ -296,6 +304,10 @@ def reset_keepers():
     # pdb.set_trace()
 
 def save_keepers(keeper_list):
+    cols = ["name", "sleeper_id", 'is_keeper', 'pick_no', 'draft_slot', 'round', 'button_text']
+    # keeper_list = [{k: v} for k, v in k.items() if keeper in cols] keeper for keeper in keeper_list if k in cols]
+    # G = {k: [v for v in range(n) if v != k] for k in range(n) }
+    keeper_list = [{k: v for k, v in keeper.items() if k in cols} for keeper in keeper_list]
     keeper_path = Path('data/keepers/keepers.json')
     print(f"Saving {len(keeper_list)} keepers to {keeper_path}")
     with open(keeper_path, 'w') as file:
@@ -374,9 +386,12 @@ def TableSimulation():
     db = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
     k = PP.loc[PP["is_keeper"] == True].to_dict("records")
     for p in k:
-        db[p["round"]-1, p["draft_slot"]-1] = {"button_text": p["button_text"], "position": p["position"]}
-
-
+        loc = (p["round"] - 1, p["draft_slot"] - 1)
+        db[loc] = {"button_text": p["button_text"], "position": p["position"]}
+        # db[p["round"] - 1, p["draft_slot"] - 1] = {"button_text": p["button_text"], "position": p["position"]}
+    """
+    Try to fill in around the numpy array with picks already in. 
+    """
     """
     TODO: Map and create right-click menus,
     Sort by ADP or VBD or VOLS or VORP
