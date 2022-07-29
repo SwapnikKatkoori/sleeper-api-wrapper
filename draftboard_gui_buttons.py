@@ -313,15 +313,12 @@ def TableSimulation():
                            non_blocking=True, font='Default 18')
 
     sg.set_options(element_padding=(0, 0))
-
+    # --- GUI Definitions ------- #
     menu_def = [['File', ['Open', 'Save', 'Exit']],
                 ['Player Pool', ['View Player Pool']],
                 ['Keepers', ['Set Keepers', 'Clear All Keepers']],
                 ['Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
                 ['Help', 'About...'], ]
-
-
-
     BOARD_LENGTH = MAX_ROWS * MAX_COLS
     RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
     BG_COLORS = {"WR": "white on DodgerBlue",
@@ -361,8 +358,8 @@ def TableSimulation():
     """
     draft = Drafts(DRAFT_ID)
     drafted_list = draft.get_all_picks()
-    non_kept_picks = [n + 1 for n in range(len(PP)) if n + 1 not in PP['pick_no'].to_list()]
 
+    non_kept_picks = [n + 1 for n in range(len(PP)) if n + 1 not in PP['pick_no'].to_list()]
     PP['adp_pick_no'] = PP["pick_no"]
     PP.sort_values(by=['adp_pick'], ascending=True, inplace=True)
     PP.loc[PP["is_keeper"] != True, 'adp_pick_no'] = non_kept_picks
@@ -384,10 +381,11 @@ def TableSimulation():
     db[1::2, :] = db[1::2, ::-1]
     db = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
     keeper_pool = PP.loc[PP["is_keeper"] == True].to_dict("records")
+
     for p in keeper_pool:
         loc = (p["round"] - 1, p["draft_slot"] - 1)
         db[loc] = {"button_text": p["button_text"], "position": p["position"]}
-        # db[p["round"] - 1, p["draft_slot"] - 1] = {"button_text": p["button_text"], "position": p["position"]}
+
     draft_pool = PP.loc[PP["is_keeper"] == False].to_dict("records")
     for p in draft_pool:
         pass
@@ -412,6 +410,11 @@ def TableSimulation():
     """
     # rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
     rb_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
+    r_list = [r for r in rb_list]
+    for idx, x in enumerate(r_list):
+        print(idx, x)
+    r_list = [[f"{idx+1} {p}" for p in player] for idx, player in enumerate(r_list)]
+    pdb.set_trace()
     wr_list = PP[PP["position"] == "WR"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
     qb_list = PP[PP["position"] == "QB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
     te_list = PP[PP["position"] == "TE"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
@@ -463,17 +466,17 @@ def TableSimulation():
     ecr_data = ecr_cheat.values.tolist()
     ecr_columns = ecr_cheat.columns.tolist()
     # pdb.set_trace()
-    col3 = [[sg.Table(ecr_data, headings=['Tier', 'ECR', 'Pos', 'Team', 'Name', 'sleeper_id'],
-                      col_widths=[3, 3, 3, 3, 3, 3], visible_column_map=[True, True, True, True, False],
+    col3 = [[sg.Table(ecr_data, headings=['Tier', 'ECR', 'Pos', 'Name', 'Team', 'sleeper_id'],
+                      col_widths=[1, 3, 3, 3, 10, 3], visible_column_map=[True, True, True, True, False],
                       auto_size_columns=True, max_col_width=15, display_row_numbers=False,
                       num_rows=min(100, len(ecr_data)), row_height=10, justification="left", s=(600, 796),
                       key="-TABLE-", expand_x=True, expand_y=True, visible=True)
             ]]
-    col1 = sg.Column(col1, size=(1500, 800), vertical_alignment="bottom", justification="bottom",
+    col1 = sg.Column(col1, size=(1150, 800), vertical_alignment="bottom", justification="bottom",
                      element_justification="center")
     col2 = sg.Column(col2, size=(150, 796))
-    col3 = sg.Column(col3, size=(150, 796))
-    cheat_frame = sg.Frame("Cheat Sheets", [[col2]], )
+    col3 = sg.Column(col3, size=(600, 796))
+    cheat_frame = sg.Frame("Cheat Sheets", [[col2, col3]], s=(800, 796))
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
                sg.Button('Load VBD', key="-Load-VBD-"),
