@@ -1,6 +1,6 @@
 from ecr import get_player_pool
 import numpy as np
-pp = get_player_pool()
+"""pp = get_player_pool()
 
 # db = pp[["cheatsheet_text", 'is_keeper']][:9].to_numpy()
 # db = PP["button_text"][:9].to_numpy()
@@ -30,11 +30,27 @@ print(db[0, 0])
 k = db[0, 0]
 print(type(k))
 
-arr = np.full((3, 3), {"button_text": "-", "position": "-"})
+arr = np.full((3, 3), {"b": "-", "p": "-"})
 print(arr)
 arr[(k["round"], k["draft_slot"])] = k
 print(arr)
 
+arr = np.empty((3,3))
+print(arr)
+"""
+db = np.empty([3,3], dtype=object)
+db = np.reshape(db, (3,3))
+db[1::2, :] = db[1::2, ::-1]
+
+# db = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
+# print(db)
+
+db[1, 1] = "E"
+print(db)
+
+letters = ["A", "B", "C", "D", "F", "G", "H", "I"]
+db = np.insert(db, [3], letters)
+print(db)
 
 
 

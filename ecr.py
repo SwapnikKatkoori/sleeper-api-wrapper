@@ -312,23 +312,5 @@ window.mainloop()
 
 """
 # ---- Old Func from Draftboard gui  ------ # 
-def reorder_keepers(list_to_sort, keeper_list):
-    print(f"Before Keeper Insert {len(list_to_sort)}")
-    pop_count = 0
-    for k in keeper_list:
-        print(k)
-    for k in keeper_list:
-        k['name'] = f"{k['metadata']['first_name']} {k['metadata']['last_name']}"
-        k['position'] = k['metadata']['position']
-        k['team'] = k['metadata']['team']
-        for i, d in enumerate(list_to_sort):
-            try:
-                if d['sleeper_id'] == k['player_id']:
-                    k['bye'] = d['bye']
-                    list_to_sort.pop(i)
-                    pop_count += 1
-                    pass
-            except:
-                print("This Key Error")
-                pdb.set_trace()
+
 """
