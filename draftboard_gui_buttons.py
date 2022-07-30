@@ -390,13 +390,14 @@ def TableSimulation():
                   p=(1, 1),
                   border_width=1,
                   button_color=BG_COLORS[adp_db[r, c]["position"]],
-                  mouseover_colors="gray",
-                  highlight_colors=("black", "white"),
+                  mouseover_colors="blue",
+                  highlight_colors=("green", "orange"),
                   disabled=False,
                   # changed the disabled_button_color
                   disabled_button_color="white on gray",
                   auto_size_button=True,
                   metadata={"is_clicked": False},
+                  # font=("bold"),
                   key=(r, c)) for c in range(MAX_COLS)] for r in
             range(MAX_ROWS)]  # , size=(1200, 796), scrollable=True, expand_x=True, expand_y=True, )
 
@@ -415,13 +416,14 @@ def TableSimulation():
                                expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
                    [sg.T("TE")],
                    [sg.Listbox(get_cheatsheet_list(PP, "TE"), key="-TE-LIST-TAB-", size=(50, 12), auto_size_text=True,
-                               expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)]]
+                               expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False, enable_events=True)]]
 
     tab2_layout = [[sg.Table(ecr_data, headings=['Tier', 'ECR', 'Pos', 'Name', 'Team', 'sleeper_id'],
                              col_widths=[1, 3, 3, 10, 3], visible_column_map=[True, True, True, True, True, False],
                              auto_size_columns=False, max_col_width=15, display_row_numbers=False,
-                             num_rows=min(100, len(ecr_data)), row_height=15, justification="right",
-                             key="-TAB2-TABLE-", expand_x=True, expand_y=True, visible=True)
+                             num_rows=min(100, len(ecr_data)), row_height=15, justification="right", expand_x=True,
+                             expand_y=True, visible=True, enable_events=True, enable_click_events=True,
+                             key="-TAB2-TABLE-", )
                     ]]
     tab1 = sg.Tab("Pos. Cheatsheets", tab1_layout, key="tab1")
     tab2 = sg.Tab("ECR Overall", tab2_layout, key="tab2")
@@ -441,7 +443,10 @@ def TableSimulation():
                         enable_events=True,
                         key="-Drafted-")],
               [pane1]]  # [[col1] + [col2]]]
-
+    """
+    specifies the font family, size, etc. Tuple or Single string format 'name size styles'. Styles: italic * roman bold normal underline overstrike
+    
+    """
     window = sg.Window('Table', layout, return_keyboard_events=True, resizable=True, scaling=1)
     """
     WHILE LOOP
@@ -452,6 +457,8 @@ def TableSimulation():
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
+        elif event in ("-TAB2-TABLE-", "-TE-LIST-TAB-"):
+            pdb.set_trace()
         elif event in ("-Refresh-", sg.TIMEOUT_KEY):
             # drafted = keeper_list
             drafted = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in draft.get_all_picks()]
