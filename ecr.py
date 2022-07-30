@@ -7,6 +7,64 @@ from pandastable import Table
 from tkinter import *
 from ffcalc import get_sleeper_ids, get_adp_df
 import json
+import PySimpleGUI as sg
+import numpy as np
+MAX_ROWS = 17
+MAX_COLS = 12
+
+
+def get_cheatsheet_list(df, pos):
+    df = df[df["position"] == pos]  #  ['position_tier_ecr', 'cheatsheet_text'].tolist()
+    df = df[["position_tier_ecr", 'cheatsheet_text']]
+    """
+    scratch Cheat Sheet List Building
+    # rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
+    rb_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
+    rb_list = [r for r in rb_list]
+    for idx, x in enumerate(rb_list):
+        print(idx, x)
+    # r_list = [[f"{idx+1} {p}" for p in player] for idx, player in enumerate(r_list)]
+    new_list = [sublist for sublist in rb_list]
+
+    # df = df.T
+    # df = df.groupby(by='position_tier_ecr', level=1)
+    # df = PP[[PP["position"] == "RB"], "position_tier_ecr", "cheatsheet_text"]
+    # df.reset
+    # df.sort_values(by=['position_tier_ecr'], ascending=True, inplace=True, na_position='last')
+    # ecr_cheat=PP.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
+    # pdb.set_trace()
+    """
+    return df.values.tolist()
+
+
+def get_db_arr(df, key):
+    keys = {"adp": {"sort": "adp_pick", "pick_no": "adp_pick_no"},
+            "ecr": {"sort": "superflex_rank_ecr", "pick_no": 'ecr_pick_no'},
+            "empty": {"sort": "", "pick_no": ""}
+            }
+    if key in ["adp", "ecr"]:
+        sort = keys[key]['sort']
+        pick_no = keys[key]['pick_no']
+        print(sort)
+        non_kept_picks = [n + 1 for n in range(len(df)) if n + 1 not in df['pick_no'].to_list()]
+        df[pick_no] = df["pick_no"]
+        df.sort_values(by=sort, ascending=True, inplace=True)
+        df.loc[df["is_keeper"] != True, f'{key}_pick_no'] = non_kept_picks
+        df.sort_values(by=pick_no, ascending=True, inplace=True)
+        arr = np.array(df[:MAX_ROWS * MAX_COLS].to_dict("records"))
+        arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
+        arr[1::2, :] = arr[1::2, ::-1]
+    elif key == "empty":
+        arr = np.empty([MAX_ROWS, MAX_COLS])
+        arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
+        arr[1::2, :] = arr[1::2, ::-1]
+        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
+    return arr
+
+
+def DraftIdPopUp():
+    sg.PopupScrolled('Select Draft ID')
+    pass
 
 
 def get_ecr_rankings(player_count=225):
@@ -348,10 +406,5 @@ select_frame.pack(side="left")
 make_table(draft_pool)
 
 window.mainloop()
-
-"""
-
-"""
-# ---- Old Func from Draftboard gui  ------ # 
 
 """
