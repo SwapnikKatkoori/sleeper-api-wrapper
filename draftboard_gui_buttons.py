@@ -318,7 +318,7 @@ def TableSimulation():
                 ['Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
                 ['Help', 'About...'], ]
     BOARD_LENGTH = MAX_ROWS * MAX_COLS
-    RELIEF_ = "solid"  # "groove" "raised" "sunken" "flat" "ridge"
+    RELIEF_ = "flat"  # "groove" "raised" "sunken" "solid" "ridge"
     BG_COLORS = {"WR": "white on DodgerBlue",
                  "QB": "white on DeepPink",
                  "RB": "white on LimeGreen",
@@ -381,14 +381,14 @@ def TableSimulation():
     """
     # noinspection PyTypeChecker
     col1_layout = [[sg.T("  ", size=(5, 1), justification='left')] +
-            [sg.B(button_text=draft_order[c + 1], border_width=1, key=f"TEAM{c}", size=(14, 0)) for c in
+            [sg.B(button_text=draft_order[c + 1], border_width=1, p=(1,1), key=f"TEAM{c}", size=(14, 0)) for c in
              range(MAX_COLS)]] + \
            [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
             [sg.B(button_text=f"{adp_db[r, c]['button_text']}",
                   enable_events=True,
                   size=(14, 0),
-                  p=(0, 0),
-                  border_width=0,
+                  p=(1, 1),
+                  border_width=1,
                   button_color=BG_COLORS[adp_db[r, c]["position"]],
                   mouseover_colors="gray",
                   highlight_colors=("black", "white"),
@@ -400,10 +400,7 @@ def TableSimulation():
                   key=(r, c)) for c in range(MAX_COLS)] for r in
             range(MAX_ROWS)]  # , size=(1200, 796), scrollable=True, expand_x=True, expand_y=True, )
 
-
-
-    col1 = sg.Column(col1_layout, size=(1150, 800), scrollable=True,
-                     vertical_alignment="bottom", justification="bottom",
+    col1 = sg.Column(col1_layout, size=(1150, 800), scrollable=True, vertical_alignment="bottom", justification="bottom",
                      element_justification="center", pad=5, grab=True)
 
     tab1_layout = [[sg.T("Cheat Sheets")],
@@ -430,7 +427,7 @@ def TableSimulation():
     tab2 = sg.Tab("ECR Overall", tab2_layout, key="tab2")
     tab_group = [[sg.TabGroup([[tab1, tab2]], key="tab_group")]]
     col2 = sg.Column(tab_group, size=(300, 796), scrollable=True, grab=True, pad=5)
-
+    pane1 = sg.Pane([col1, col2], orientation = "horizontal",)
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
                sg.Button('Load VBD', key="-Load-VBD-"),
@@ -442,7 +439,8 @@ def TableSimulation():
                sg.Combo(values=[f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in drafted_list],
                         size=10,
                         enable_events=True,
-                        key="-Drafted-")], [[col1] + [col2]]]
+                        key="-Drafted-")],
+              [pane1]]  # [[col1] + [col2]]]
 
     window = sg.Window('Table', layout, return_keyboard_events=True, resizable=True, scaling=1)
     """
@@ -547,6 +545,7 @@ def TableSimulation():
             sg.popup('Clear All Keepers')
         elif event == 'Select Draft ID':
             sg.PopupScrolled('Select Draft ID')
+            # pdb.set_trace()
         elif event == 'Open':
             filename = sg.popup_get_file(
                 'filename to open', no_window=True, file_types=(("CSV Files", "*.csv"),))
