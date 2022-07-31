@@ -45,7 +45,6 @@ def get_db_arr(df, key):
     if key in ["adp", "ecr"]:
         sort = keys[key]['sort']
         pick_no = keys[key]['pick_no']
-        print(sort)
         non_kept_picks = [n + 1 for n in range(len(df)) if n + 1 not in df['pick_no'].to_list()]
         df[pick_no] = df["pick_no"]
         df.sort_values(by=sort, ascending=True, inplace=True)
@@ -58,7 +57,7 @@ def get_db_arr(df, key):
         arr = np.empty([MAX_ROWS, MAX_COLS])
         arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
         arr[1::2, :] = arr[1::2, ::-1]
-        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "-", "position": "-"})
+        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "\n\n", "position": "-"})
     return arr
 
 
@@ -187,6 +186,21 @@ def clean_flex_df(flex_df):
 
     return flex_df
 
+def get_ecr_cs(df, hide_drafted=False ):
+    """
+    Cheat Sheet List building
+    """
+    ecr_cols = ['sleeper_id', 'superflex_tier_ecr', 'name', 'team', 'position', 'superflex_rank_ecr', ]
+    if hide_drafted:
+        df2 = df.loc[df['is_drafted'] != True]
+        ecr_cheat = df2.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
+    else:
+        ecr_cheat = df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
+    ecr_cheat = ecr_cheat[ecr_cols]
+    ecr_cheat.fillna(value="-", inplace=True)
+    ecr_data = ecr_cheat.values.tolist()
+    return ecr_data
+
 
 def get_fpros_projections():
     qb_path = Path("data/fpros/FantasyPros_Fantasy_Football_Projections_QB.csv")
@@ -258,9 +272,13 @@ def get_player_pool(player_count=400):
 
     # Add in None values for Keeper columns
     # board_loc will eventually be the tuple that can be used to place on the draftboard array
-    k_cols = ['is_keeper', 'pick_no', 'draft_slot', 'round', 'board_loc']
+    k_cols = ['is_keeper', 'is_drafted', 'pick_no', 'draft_slot', 'round', 'board_loc']
+
     for k in k_cols:
-        p_pool[k] = None
+        if k in ['is_keeper', 'is_drafted']:
+            p_pool[k] = False
+        else:
+            p_pool[k] = None
 
 
     # Open keeper list of dicts so that we can set the keeper value to True
@@ -272,12 +290,14 @@ def get_player_pool(player_count=400):
             p['sleeper_id'] = p['player_id']
         id = p['sleeper_id']
         is_keeper = p['is_keeper']
+        # initializing the keeper/drafted value as them same.  The values will update while drafting
+        is_drafted = p['is_keeper']
         pick_no = p['pick_no']
         slot = p['draft_slot']
         rd = p['round']
         board_loc = "hi"
         try:
-            p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, pick_no, slot, rd, board_loc]
+            p_pool.loc[p_pool['sleeper_id'] == id, k_cols] = [is_keeper, is_drafted, pick_no, slot, rd, board_loc]
         except:
             print(board_loc)
             pdb.set_trace()
