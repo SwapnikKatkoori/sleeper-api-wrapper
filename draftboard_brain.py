@@ -1,39 +1,128 @@
 import pdb
 import re
 import pandas as pd
+import requests
+from sleeper_wrapper import Players
 from pathlib import Path
 import time
 from pandastable import Table
-from tkinter import *
-from ffcalc import get_sleeper_ids, get_adp_df
 import json
 import PySimpleGUI as sg
 import numpy as np
+from datetime import datetime
+
 MAX_ROWS = 17
 MAX_COLS = 12
 
+players = Players()
+
+YEAR = datetime.today().strftime('%Y')
+TODAY = datetime.today().strftime('%Y-%m-%d')
+
+
+def get_sleeper_ids(df):
+    # ----- Create the search_names (all lowercase, no spaces) ------ #
+    search_names = []
+    remove = ['jr', 'ii', 'sr']
+    for idx, row in df.iterrows():
+        if row["team"] == "JAC":
+            df.loc[idx, "team"] = "JAX"
+        if row['name'] == "Kyle Rudolph":
+            row["team"] == "TB"
+        if row["team"] == "FA":
+            df.loc[idx, "team"] = None
+        new_name = re.sub(r'\W+', '', row['name']).lower()
+        if new_name[-3:] == "iii":
+            new_name = new_name[:-3]
+        elif new_name[-2:] in remove:
+            new_name = new_name[:-2]
+
+        if new_name == "kennethwalker":
+            new_name = "kenwalker"
+
+        if new_name == "mitchelltrubisky":
+            new_name = "mitchtrubisky"
+
+        if new_name == "williamfullerv":
+            new_name = "williamfuller"
+
+        search_names.append(new_name)
+
+    df['search_full_name'] = search_names
+    search_name_tuples = list(zip(df.search_full_name, df.team))
+
+    players_df = players.get_players_df()
+    players_match_df = players_df[
+        players_df[['search_full_name', 'team']].apply(tuple, axis=1).isin(search_name_tuples)]
+    cols_to_use = players_match_df.columns.difference(df.columns).to_list()
+    cols_to_use.append("search_full_name")
+    df = pd.merge(df, players_match_df[cols_to_use], how="left", on="search_full_name")
+    for index, row in df.iterrows():
+        if row["position"] == "DEF":
+            df.loc[index, "sleeper_id"] = row["team"]
+        else:
+            df.loc[index, "sleeper_id"] = row["player_id"]
+    # df['sleeper_id'] = df.apply(lambda x: x['team'] if x['player_id'] is None else x['player_id'], axis=1)
+    match_search_names = df['search_full_name'].to_list()
+    missing_search_names = [n for n in search_names if n not in match_search_names]
+    if missing_search_names:
+        print(f"Missing Search Names: {missing_search_names}")
+    # print(df.loc[df['name'] == "Tyreek Hill"])
+    # pdb.set_trace()
+    return df
+
+
+def get_adp_df(adp_type="2qb", adp_year=YEAR, teams_count=12, positions="all"):
+    start_time = time.time()
+    base_url = f"https://fantasyfootballcalculator.com/api/v1/adp/" \
+               f"{adp_type}?teams={teams_count}&{adp_year}&position={positions}"
+    file_path = Path('data/adp/adp.json')
+
+    try:
+        with open(file_path, "r") as data_file:
+            adp_data = json.load(data_file)
+            adp_end_date = adp_data["meta"]["end_date"]
+    except FileNotFoundError:
+        adp_end_date = None
+        pass
+
+    if adp_end_date == TODAY:
+        print(f"Loading local ADP data from {adp_end_date}")
+    else:
+        print(f"Local ADP data does not match today's date, {TODAY}. Making call to FFCalc.")
+        try:
+            response = requests.get(base_url)
+            adp_data = response.json()
+        except requests.exceptions.RequestException as e:
+            if adp_end_date:
+                print(f"Error {e} when making the remote call.  Using local data from {adp_end_date}")
+                pass
+            else:
+                print("Error reading local copy and error reading remote copy.  Must break. ")
+                pass
+        finally:
+            with open(file_path, 'w') as data_file:
+                json.dump(adp_data, data_file, indent=4)
+
+    with open('data/adp/adp.json', 'r') as file:
+        adp_data = json.load(file)
+
+    adp_dict = adp_data["players"]
+
+    adp_df = pd.DataFrame(adp_dict)
+    adp_df.rename(columns={"player_id": "ffcalc_id"}, inplace=True)
+    adp_df["adp_pick"] = adp_df.index + 1
+    adp_df = get_sleeper_ids(adp_df)
+
+    end_time = time.time()
+    print(f"Time to get ADP DF: {end_time - start_time}")
+
+    return adp_df
+
 
 def get_cheatsheet_list(df, pos):
-    df = df[df["position"] == pos]  #  ['position_tier_ecr', 'cheatsheet_text'].tolist()
+    df = df[df["position"] == pos]  # ['position_tier_ecr', 'cheatsheet_text'].tolist()
     df = df[["position_tier_ecr", 'cheatsheet_text']]
-    """
-    scratch Cheat Sheet List Building
-    # rb_list = PP[PP["position"] == "RB"].sort_values(by="position_rank_ecr").to_dict("records")
-    rb_list = PP[PP["position"] == "RB"].groupby('position_tier_ecr')['cheatsheet_text'].apply(list)
-    rb_list = [r for r in rb_list]
-    for idx, x in enumerate(rb_list):
-        print(idx, x)
-    # r_list = [[f"{idx+1} {p}" for p in player] for idx, player in enumerate(r_list)]
-    new_list = [sublist for sublist in rb_list]
-
-    # df = df.T
-    # df = df.groupby(by='position_tier_ecr', level=1)
-    # df = PP[[PP["position"] == "RB"], "position_tier_ecr", "cheatsheet_text"]
-    # df.reset
-    # df.sort_values(by=['position_tier_ecr'], ascending=True, inplace=True, na_position='last')
-    # ecr_cheat=PP.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
-    # pdb.set_trace()
-    """
     return df.values.tolist()
 
 
@@ -172,34 +261,45 @@ def clean_flex_df(flex_df):
     # calculate custom score and sort
     # flex_df["fpts"] = flex_df.apply(self.get_custom_score_row, axis=1)
     # flex_df.sort_values(by="fpts", inplace=True, ascending=False)
-    """
-    # split into RB, WR, and TE DFs, return all 4
-    rb_df = flex_df[flex_df["position"] == "RB"]
-    rb_df = self.add_vbd(rb_df)
-    wr_df = flex_df[flex_df["position"] == "WR"]
-    wr_df = self.add_vbd(wr_df)
-    te_df = flex_df[flex_df["position"] == "TE"]
-    te_df = self.add_vbd(te_df)
-    """
 
     flex_df.dropna(inplace=True, thresh=5)
 
     return flex_df
 
-def get_ecr_cs(df, hide_drafted=False ):
+
+def get_cheatsheet_table(df, pos="all", hide_drafted=False):
+    table_data = get_cheatsheet_data(df, pos, hide_drafted)
+
+    table = sg.Table(table_data, headings=['sleeper_id', 'Tier', pos, ], col_widths=[0, 3, 35],
+                     visible_column_map=[False, True, True,],
+                     auto_size_columns=True, max_col_width=35, display_row_numbers=False,
+                     num_rows=min(10, len(table_data)), row_height=15, justification="left",
+                     key=f"-{pos}-TABLE-", expand_x=True, expand_y=True, visible=True)
+    return table
+
+
+def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     """
-    Cheat Sheet List building
+    Cheat Sheet Data for the rows of the tables building
     """
-    ecr_cols = ['sleeper_id', 'superflex_tier_ecr', 'name', 'team', 'position', 'superflex_rank_ecr', ]
+    pos = pos.upper()  # Caps pos to align with position values "QB, RB, WR TE" and sg element naming format
+
     if hide_drafted:
-        df2 = df.loc[df['is_drafted'] != True]
-        ecr_cheat = df2.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
+        df = df.loc[:, 'is_drafted' != True]
+
+    if pos == "ALL":
+        df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last', inplace=True)
+        cols = ['sleeper_id', 'superflex_tier_ecr', 'cheatsheet_text']
     else:
-        ecr_cheat = df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
-    ecr_cheat = ecr_cheat[ecr_cols]
-    ecr_cheat.fillna(value="-", inplace=True)
-    ecr_data = ecr_cheat.values.tolist()
-    return ecr_data
+        df = df.loc[df["position"] == pos]
+        cols = ['sleeper_id', 'position_tier_ecr', 'cheatsheet_text']
+        df.sort_values(by=["position_rank_ecr"], ascending=True, na_position="last", inplace=True)
+
+    df = df.loc[:, cols]
+    df.fillna(value="-", inplace=True)
+    table_data = df.values.tolist()
+
+    return table_data
 
 
 def get_fpros_projections():
@@ -269,7 +369,6 @@ def get_player_pool(player_count=400):
     p_pool["button_text"] = p_pool['first_name'] + '\n' + p_pool['last_name'] + '\n' + p_pool[
         'position'] + ' (' + p_pool['team'] + ') ' + p_pool['bye'].astype(str)
 
-
     # Add in None values for Keeper columns
     # board_loc will eventually be the tuple that can be used to place on the draftboard array
     k_cols = ['is_keeper', 'is_drafted', 'pick_no', 'draft_slot', 'round', 'board_loc']
@@ -279,7 +378,6 @@ def get_player_pool(player_count=400):
             p_pool[k] = False
         else:
             p_pool[k] = None
-
 
     # Open keeper list of dicts so that we can set the keeper value to True
     keeper_list = open_keepers(get="list")
@@ -318,11 +416,6 @@ def reorder_keepers(key, p_pool):
 
 
 def open_keepers(get=None):
-    """
-    This func checks for the keepers saved in keepers.json
-    get="text" returns just the round/slot and sleeper id as list of dicts
-    get="list" returns the list of full dicts
-    """
     keeper_json_path = Path('data/keepers/keepers.json')
     try:
         with open(keeper_json_path, "r") as data:
@@ -359,10 +452,7 @@ def clear_all_keepers():
 
 
 
-
-
-
-
+"""
 # ------------- GUI SETUP and func----------- #
 def make_table(gui_df):
     # Table Func for GUI
@@ -370,8 +460,9 @@ def make_table(gui_df):
     table.autoResizeColumns()
     table.show()
 
+
 # clear_all_keepers()
-"""
+
 draft_pool = get_player_pool()
 window = Tk()
 window.title("Sleeper Project")

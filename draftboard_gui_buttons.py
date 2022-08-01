@@ -107,19 +107,10 @@ Player_Pool = Main Pool should come from ECR/VBD   List of Player Dicts? or Data
 
 # !/usr/bin/env python
 import pdb
-import time
-import PySimpleGUI as sg
-import csv
-import pandas as pd
-import requests
-import numpy as np
-from pathlib import Path
-import json
-from sleeper_wrapper import Drafts, League, Players
-from ecr import *  # get_db_arr, get_fpros_data, merge_dfs, get_player_pool, open_keepers, clear_all_keepers, reorder_keepers, DraftIdPopUp
-from ffcalc import get_adp_df
-from pandastable import Table
-from tkinter import *
+
+from sleeper_wrapper import Drafts, League
+from draftboard_brain import *
+
 
 MAX_ROWS = 17
 MAX_COLS = 12
@@ -134,6 +125,9 @@ def get_mock_keepers(mock_id=856772332067360768):
 
 
 def make_pick_list():
+    """
+    This func reorders the the picks to be in snake-draft format.
+    """
     pl = [f"{r + 1}.{c + 1}" for r in range(MAX_ROWS) for c in range(MAX_COLS)]
     pl = np.array(pl)
     pl = np.reshape(pl, (MAX_ROWS, MAX_COLS))
@@ -311,7 +305,7 @@ def TableSimulation():
                            non_blocking=True, font='Default 18')
 
     sg.set_options(element_padding=(1, 1))
-    sg.set_options(font=("Calibri", 10, "normal"))
+    sg.set_options(font=("Calibri", 9, "normal"))
     # --- GUI Definitions ------- #
     menu_def = [['File', ['Open', 'Save', 'Exit']],
                 ['Draft ID', ['Select Draft ID']],
@@ -358,20 +352,20 @@ def TableSimulation():
     Now create draft for the mock draft we are using
     """
     draft = Drafts(DRAFT_ID)
-    live_draft = True
+    live_draft = False
 
     if live_draft:
         drafted_list = draft.get_all_picks()
     else:
-        drafted_list = PP.loc[PP["is_keeper"] == True, 'name'].to_list()
+        drafted_list = PP.loc[PP["is_keeper"] == True, 'sleeper_id'].to_list()
 
     # -------Draftboard Arrays--------#
     adp_db = get_db_arr(PP, "adp")
     vbd_db = get_db_arr(PP, "ecr")
     db = get_db_arr(PP, "empty")
 
+    # Placing keepers on the empty draft board
     keeper_pool = PP.loc[PP["is_keeper"] == True].to_dict("records")
-
     for p in keeper_pool:
         loc = (p["round"] - 1, p["draft_slot"] - 1)
         db[loc] = {"button_text": p["button_text"], "position": p["position"]}
@@ -380,10 +374,10 @@ def TableSimulation():
     Column and Tab Layouts
     """
     # noinspection PyTypeChecker
-    col1_layout = [[sg.T("  ", size=(5, 1), justification='left')] +
+    col1_layout = [[sg.T("", size=(3, 1), justification='left')] +
                    [sg.B(button_text=draft_order[c + 1], border_width=0, p=(1, 1), key=f"TEAM{c}", size=(13, 0)) for c
                     in range(MAX_COLS)]] + \
-                  [[sg.T(f"Rd {str(r + 1)}:", size=(5, 1), justification='left')] +
+                  [[sg.T(f"R{str(r + 1)}", size=(3, 1), justification='left')] +
                    [sg.B(button_text=f"{db[r, c]['button_text']}",
                          enable_events=True,
                          size=(13, 0),
@@ -406,27 +400,27 @@ def TableSimulation():
                      justification="bottom",
                      element_justification="left", pad=5, grab=True)
 
+    # New tab1 layout with tables:
     tab1_layout = [[sg.T("Cheat Sheets")],
-                   [sg.T("QB")], [sg.Listbox(get_cheatsheet_list(PP, "QB"), key='-QB-LIST-TAB-', size=(50, 15),
-                                             auto_size_text=True, expand_y=True, expand_x=False, no_scrollbar=False,
-                                             horizontal_scroll=False)],
-                   [sg.T("RB")],
-                   [sg.Listbox(get_cheatsheet_list(PP, "RB"), key="-RB-LIST-TAB-", size=(50, 15), auto_size_text=True,
-                               expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
-                   [sg.T("WR")],
-                   [sg.Listbox(get_cheatsheet_list(PP, "WR"), key='-WR-LIST-TAB-', size=(50, 15), auto_size_text=True,
-                               expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)],
-                   [sg.T("TE")],
-                   [sg.Listbox(get_cheatsheet_list(PP, "TE"), key="-TE-LIST-TAB-", size=(50, 12), auto_size_text=True,
-                               expand_y=True, expand_x=False, no_scrollbar=False, horizontal_scroll=False)]]
+                   #[sg.Checkbox("Hide Drafted Players", enable_events=True, key=("-HIDE-DRAFTED-POS-"))],
+                   # get_cheatsheet_table():
+                   #[sg.T("QB")],
+                   [get_cheatsheet_table(PP, pos="QB", hide_drafted=False)],
+                   [get_cheatsheet_table(PP, pos="RB", hide_drafted=False)],
+                   [get_cheatsheet_table(PP, pos="WR", hide_drafted=False)],
+                   [get_cheatsheet_table(PP, pos="TE", hide_drafted=False)],
+                   ]
+
     # ---Cheatsheet for table---#
-    ecr_cs = get_ecr_cs(PP, hide_drafted=False)
-    tab2_layout = [[sg.Checkbox("Hide Drafted Players", enable_events=True, key=("-HIDE-DRAFTED-"))],
-                   [sg.Table(ecr_cs, headings=['sleeper_id', 'Tier', 'Name', 'Team', 'Pos', 'ECR'],
-                             col_widths=[1, 1, 10, 1, 1], visible_column_map=[False, True, True, True, True, True],
-                             auto_size_columns=False, max_col_width=15, display_row_numbers=False,
-                             num_rows=min(100, len(ecr_cs)), row_height=15, justification="left",
-                             key="-ECR-TABLE-", expand_x=True, expand_y=True, visible=True)]]
+
+    tab2_layout = [[get_cheatsheet_table(PP, pos="ALL", hide_drafted=False)]]
+    """     
+    [sg.Table(ecr_cs, headings=['sleeper_id', 'Tier', 'Name', 'Team', 'Pos', 'ECR'],
+             col_widths=[1, 1, 10, 1, 1], visible_column_map=[False, True, True, True, True, True],
+             auto_size_columns=False, max_col_width=15, display_row_numbers=False,
+             num_rows=min(100, len(ecr_cs)), row_height=15, justification="left",
+             key="-ALL-TABLE-", expand_x=True, expand_y=True, visible=True)]]
+    """
     tab1 = sg.Tab("Pos. Cheatsheets", tab1_layout, key="tab1")
     tab2 = sg.Tab("ECR Overall", tab2_layout, key="tab2")
     tab_group = [[sg.TabGroup([[tab1, tab2]], key="tab_group")]]
@@ -440,8 +434,9 @@ def TableSimulation():
                sg.Button('Refresh', key="-Refresh-"),
                sg.Text('Search: '),
                sg.Input(key='-Search-', enable_events=True, focus=True, tooltip="Find Player"),
-               sg.Combo(values=drafted_list, size=10, enable_events=True, key="-Drafted-")],
-              [pane1]]  # [[col1] + [col2]]]
+               sg.Push(),
+               sg.Checkbox("Hide Drafted Players", enable_events=True, key="-HIDE-DRAFTED-")],
+              [pane1]]
 
     window = sg.Window('Weez Draftboard',
                        layout, return_keyboard_events=True, resizable=True, scaling=2, right_click_menu_tearoff=1)
@@ -456,7 +451,10 @@ def TableSimulation():
             break
         # click on button event
         elif event == "-HIDE-DRAFTED-":
-            window["-ECR-TABLE-"].update(values=get_ecr_cs(PP, hide_drafted=window["-HIDE-DRAFTED-"].get()))
+            for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
+                window[f"-{t}-TABLE-"].update(values=table_data)
+
         elif event in [(r, c) for c in range(MAX_COLS) for r in range(MAX_ROWS)]:
             r, c = event
             s_id = window[(r, c)].metadata["sleeper_id"]
@@ -465,23 +463,31 @@ def TableSimulation():
             if window[(r, c)].metadata["is_clicked"]:
                 window[(r, c)].update(button_color='white on gray')
                 PP.loc[PP["sleeper_id"] == s_id, "is_drafted"] = True
-                window["-ECR-TABLE-"].update(values=get_ecr_cs(PP, hide_drafted=window["-HIDE-DRAFTED-"].get()))
+                for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                    table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
+                    window[f"-{t}-TABLE-"].update(values=table_data)
             else:
                 window[(r, c)].update(button_color=window[(r, c)].metadata["button_color"])
                 PP.loc[PP["sleeper_id"] == s_id, "is_drafted"] = False
-                window["-ECR-TABLE-"].update(values=get_ecr_cs(PP, hide_drafted=window["-HIDE-DRAFTED-"].get()))
+                for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                    table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
+                    window[f"-{t}-TABLE-"].update(values=table_data)
         elif event in ("-Refresh-", sg.TIMEOUT_KEY):
             # drafted = keeper_list
-            all_picks = draft.get_all_picks()
+
             if live_draft:
+                all_picks = draft.get_all_picks()
                 drafted = [f"{x['metadata']['first_name']} {x['metadata']['last_name']}" for x in all_picks]
                 drafted_ids = [x['player_id'] for x in all_picks]
             else:
                 drafted = drafted_list
-            window["-Drafted-"].update(values=drafted)
-            PP.loc[PP["sleeper_id"].isin(drafted_ids), "is_drafted"] = True
+                drafted_ids = PP.loc[PP["is_drafted"] == True, "sleeper_id"].tolist()
 
-            window["-ECR-TABLE-"].update(values=get_ecr_cs(PP, hide_drafted=window["-HIDE-DRAFTED-"].get()))
+            # window["-Drafted-"].update(values=drafted)
+            PP.loc[PP["sleeper_id"].isin(drafted_ids), "is_drafted"] = True
+            for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
+                window[f"-{t}-TABLE-"].update(values=table_data)
             # for loop to set the drafted players as "clicked"
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
@@ -569,9 +575,6 @@ def TableSimulation():
                 print(drafted_list[-1])
             except:
                 pdb.set_trace()
-
-    # window["-Drafted-"].update(values=drafted_list)
-
     window.close()
 
 
