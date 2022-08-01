@@ -32,6 +32,8 @@ def LeaguePopUp():
                 with open(id_json, "w") as file:
                     json.dump(window["-LEAGUE-ID-"].get(), file, indent=4)
                 print(league.settings)
+                league_id_list.append(l_id)
+                window["-LEAGUE-ID-"].update(values=league_id_list)
             except TypeError:
                 sg.popup_quick_message("Sorry, that is not a valid league ID")
 
