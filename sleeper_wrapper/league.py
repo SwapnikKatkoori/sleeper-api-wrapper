@@ -55,7 +55,7 @@ class League(BaseApi):
         return f"{self.print_rosters()}"
 
     def print_rosters(self):
-        for roster in self.rosters:
+        for roster in self.rosters_trim:
             print(roster)
 
     def get_league(self):
