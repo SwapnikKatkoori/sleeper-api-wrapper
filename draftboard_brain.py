@@ -283,19 +283,19 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     Cheat Sheet Data for the rows of the tables building
     """
     pos = pos.upper()  # Caps pos to align with position values "QB, RB, WR TE" and sg element naming format
-
     if hide_drafted:
-        df = df.loc[:, 'is_drafted' != True]
+        df = df.loc[df['is_drafted'] != True]
 
     if pos == "ALL":
         df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last', inplace=True)
         cols = ['sleeper_id', 'superflex_tier_ecr', 'cheatsheet_text']
     else:
         df = df.loc[df["position"] == pos]
+        # df2 = df.loc[:, df["position"] == pos]
         cols = ['sleeper_id', 'position_tier_ecr', 'cheatsheet_text']
         df.sort_values(by=["position_rank_ecr"], ascending=True, na_position="last", inplace=True)
 
-    df = df.loc[:, cols]
+    df = df[cols]
     df.fillna(value="-", inplace=True)
     table_data = df.values.tolist()
 
@@ -376,8 +376,11 @@ def get_player_pool(player_count=400):
     for k in k_cols:
         if k in ['is_keeper', 'is_drafted']:
             p_pool[k] = False
+            # new_col = pd.Series(k, dtype=bool)
+            # p_pool[k] = new_col
         else:
             p_pool[k] = None
+            'True: boolean label can not be used without a boolean index'
 
     # Open keeper list of dicts so that we can set the keeper value to True
     keeper_list = open_keepers(get="list")
