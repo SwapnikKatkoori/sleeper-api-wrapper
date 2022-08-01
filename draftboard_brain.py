@@ -2,7 +2,7 @@ import pdb
 import re
 import pandas as pd
 import requests
-from sleeper_wrapper import Players
+from sleeper_wrapper import Players, Drafts
 from pathlib import Path
 import time
 from pandastable import Table
@@ -18,6 +18,48 @@ players = Players()
 
 YEAR = datetime.today().strftime('%Y')
 TODAY = datetime.today().strftime('%Y-%m-%d')
+
+"""
+Funcs for KeeperPopUp
+"""
+def make_pick_list():
+    """
+    This func reorders the the picks to be in snake-draft format.
+    """
+    pl = [f"{r + 1}.{c + 1}" for r in range(MAX_ROWS) for c in range(MAX_COLS)]
+    pl = np.array(pl)
+    pl = np.reshape(pl, (MAX_ROWS, MAX_COLS))
+    pl[1::2, :] = pl[1::2, ::-1]
+    pl = pl.flatten()
+
+    return pl.tolist()
+
+
+def get_mock_keepers(mock_id=856772332067360768):
+    mock_draft = Drafts(mock_id)
+
+    return mock_draft.get_all_picks()
+
+
+def reset_keepers(df):
+    clear_all_keepers()  # this clears the keeper_list as [] and overwrites the keepers.json with empty list
+    # this resets the columns in the PP DataFrame
+    k_cols = ['is_keeper', 'is_drafted', 'pick_no', 'draft_slot', 'round']
+    for k in k_cols:
+        df[k] = None
+    return df
+
+def save_keepers(keeper_list):
+    cols = ["name", "sleeper_id", 'is_keeper', 'pick_no', 'draft_slot', 'round', 'button_text']
+    keeper_list = [{k: v for k, v in keeper.items() if k in cols} for keeper in keeper_list]
+    keeper_path = Path('data/keepers/keepers.json')
+    print(f"Saving {len(keeper_list)} keepers to {keeper_path}")
+    with open(keeper_path, 'w') as file:
+        json.dump(keeper_list, file, indent=4)
+    pass
+
+
+
 
 
 def get_sleeper_ids(df):
@@ -282,23 +324,29 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     """
     Cheat Sheet Data for the rows of the tables building
     """
+    import warnings
+
     pos = pos.upper()  # Caps pos to align with position values "QB, RB, WR TE" and sg element naming format
+
     if hide_drafted:
-        df = df.loc[df['is_drafted'] != True]
+        df = df.loc[df["is_drafted"].isin([False, None]), :]  #  True]
+        # df = df2
+        # print(df.head())
+    else:
+        pass
 
     if pos == "ALL":
-        df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last', inplace=True)
+        df = df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
         cols = ['sleeper_id', 'superflex_tier_ecr', 'cheatsheet_text']
     else:
-        df = df.loc[df["position"] == pos]
+        df = df.loc[df.position == pos]
         # df2 = df.loc[:, df["position"] == pos]
         cols = ['sleeper_id', 'position_tier_ecr', 'cheatsheet_text']
-        df.sort_values(by=["position_rank_ecr"], ascending=True, na_position="last", inplace=True)
+        df = df.sort_values(by=["position_rank_ecr"], ascending=True, na_position="last")
 
     df = df[cols]
-    df.fillna(value="-", inplace=True)
+    df = df.fillna(value="-")
     table_data = df.values.tolist()
-
     return table_data
 
 
@@ -374,13 +422,7 @@ def get_player_pool(player_count=400):
     k_cols = ['is_keeper', 'is_drafted', 'pick_no', 'draft_slot', 'round', 'board_loc']
 
     for k in k_cols:
-        if k in ['is_keeper', 'is_drafted']:
-            p_pool[k] = False
-            # new_col = pd.Series(k, dtype=bool)
-            # p_pool[k] = new_col
-        else:
-            p_pool[k] = None
-            'True: boolean label can not be used without a boolean index'
+        p_pool[k] = None
 
     # Open keeper list of dicts so that we can set the keeper value to True
     keeper_list = open_keepers(get="list")
