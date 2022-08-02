@@ -122,7 +122,7 @@ def TableSimulation():
                            non_blocking=True, font='Default 18')
 
     sg.set_options(element_padding=(1, 1))
-    sg.set_options(font=("Calibri", 11, "normal"))
+    sg.set_options(font=("Calibri", 10, "normal"))
     # --- GUI Definitions ------- #
     menu_def = [['File', ['Open', 'Save', 'Exit']],
                 ['Draft ID', ['Select Draft ID']],
@@ -145,13 +145,14 @@ def TableSimulation():
     MAX_ROWS = 17
     MAX_COLS = 12
     BOARD_LENGTH = MAX_ROWS * MAX_COLS
-    PP = get_player_pool()
+    PP, draft_order, league_found = get_player_pool()
 
     """
     Reading the last used League ID to bring in league settings. 
     draft_order used to set the buttons for the board columns/teams.
     The league info should change if a new league is loaded. 
     """
+    """    
     league_id_json = Path('data/league_ids/leagues.json')
     try:
         with open(league_id_json, "r") as file:
@@ -173,7 +174,7 @@ def TableSimulation():
         league_id_list = []
         draft_order = [x for x in range(MAX_COLS + 1)]
 
-
+    """
     live_draft = False
 
     # -------Draftboard Arrays--------#
@@ -193,14 +194,15 @@ def TableSimulation():
     # noinspection PyTypeChecker
     col1_layout = [[sg.T("", size=(3, 1), justification='left')] +
                    [sg.B(button_text=draft_order[c + 1],
+                         auto_size_button=False,
                          border_width=0, p=(1, 1),
                          key=f"TEAM{c}",
-                         size=(12, 0))
+                         size=(14, 2))
                     for c  in range(MAX_COLS)]] + \
                   [[sg.T(f"R{str(r + 1)}", size=(3, 1), justification='left')] +
                    [sg.B(button_text=f"{db[r, c]['button_text']}",
                          enable_events=True,
-                         size=(12, 0),
+                         size=(14, 0),
                          p=(1, 1),
                          border_width=0,
                          button_color=BG_COLORS[db[r, c]["position"]],

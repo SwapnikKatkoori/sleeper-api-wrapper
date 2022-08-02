@@ -2,7 +2,7 @@ import pdb
 import re
 import pandas as pd
 import requests
-from sleeper_wrapper import Players, Drafts
+from sleeper_wrapper import Players, Drafts, League
 from pathlib import Path
 import time
 from pandastable import Table
@@ -49,6 +49,7 @@ def reset_keepers(df):
         df[k] = None
     return df
 
+
 def save_keepers(keeper_list):
     cols = ["name", "sleeper_id", 'is_keeper', 'pick_no', 'draft_slot', 'round', 'button_text']
     keeper_list = [{k: v for k, v in keeper.items() if k in cols} for keeper in keeper_list]
@@ -57,9 +58,6 @@ def save_keepers(keeper_list):
     with open(keeper_path, 'w') as file:
         json.dump(keeper_list, file, indent=4)
     pass
-
-
-
 
 
 def get_sleeper_ids(df):
@@ -479,10 +477,44 @@ def get_player_pool(player_count=400):
 
     p_pool.dropna(subset=["name", "button_text"], inplace=True)
 
+    #------Now Detect if league exists and then calc custom score. -----#
+    p_pool, draft_order, league_found = load_saved_league(p_pool)
     # MOCK - 855693188285992960; 858792885288538112; 858793089177886720
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
-    return p_pool
+    return p_pool, draft_order, league_found
+
+def load_saved_league(df):
+
+    """
+    Reading the last used League ID to bring in league settings.
+    draft_order used to set the buttons for the board columns/teams.
+    The league info should change if a new league is loaded.
+    """
+    league_id_json = Path('data/league_ids/leagues.json')
+    try:
+        with open(league_id_json, "r") as file:
+            league_id_list = json.load(file)
+            league_id_list = list(set(league_id_list))
+            # ----Get Text for Draft Order Buttons (teams) ------#
+            league = League(league_id_list[0])
+            draft_order = get_draft_order(league)
+            # ---Calc Custom Scores-------#
+            start_time = time.time()
+            sg.popup_quick_message("Calculating Custom Score")
+            df['fpts'] = df.apply(lambda row: get_custom_score_row(row, league.scoring_settings), axis=1)
+            df = add_vbd(df)
+            league_found = True
+            end_time = time.time()
+            print(f"Time to calc custom scores: {end_time-start_time}")
+    except FileNotFoundError:
+        sg.popup_quick_message("League not found.")
+        league_found = False
+        Path('data/league_ids').mkdir(parents=True, exist_ok=True)
+        league_id_list = []
+        draft_order = [x for x in range(MAX_COLS + 1)]
+
+    return df, draft_order, league_found
 
 
 def reorder_keepers(key, p_pool):
@@ -496,7 +528,7 @@ def open_keepers(get=None):
         with open(keeper_json_path, "r") as data:
             keeper_list = json.load(data)
             # pdb.set_trace()
-            print(f"Opened Keeper List: {keeper_list}")
+            print(f"Total Keepers Found: {len(keeper_list)}")
             keeper_list_text = [f"{k['round']}.{k['draft_slot']} {k['sleeper_id']}" for k in keeper_list]
     except KeyError:
         with open(keeper_json_path, "r") as data:

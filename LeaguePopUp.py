@@ -21,7 +21,7 @@ def LeaguePopUp():
             league_id_list = list(set(league_id_list))
     except FileNotFoundError:
         id_path.mkdir(parents=True, exist_ok=True)
-        league_id_list = []
+        league_id_list = [" "]
 
     col1_layout = [[sg.DropDown(values=league_id_list,
                                 default_value=league_id_list[0],
