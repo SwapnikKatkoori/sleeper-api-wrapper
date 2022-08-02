@@ -110,6 +110,8 @@ from sleeper_wrapper import Drafts, League
 from draftboard_brain import *
 from KeeperPopUp import KeeperPopUp
 from LeaguePopUp import LeaguePopUp
+from ViewPlayerPool import ViewPlayerPool
+# from fpros import *
 
 
 def TableSimulation():
@@ -125,7 +127,7 @@ def TableSimulation():
     menu_def = [['File', ['Open', 'Save', 'Exit']],
                 ['Draft ID', ['Select Draft ID']],
                 ['League', ['Select League']],
-                ['Player Pool', ['View Player Pool']],
+                ['Player Pool', ['View Player Pool', 'View Projections', 'View Rank Differences']],
                 ['Keepers', ['Set Keepers', 'Clear All Keepers']],
                 ['Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
                 ['Help', 'About...'], ]
@@ -144,43 +146,35 @@ def TableSimulation():
     MAX_COLS = 12
     BOARD_LENGTH = MAX_ROWS * MAX_COLS
     PP = get_player_pool()
-    BOARD_LENGTH = MAX_ROWS * MAX_COLS
 
     """
-    Get League and user/map
+    Reading the last used League ID to bring in league settings. 
+    draft_order used to set the buttons for the board columns/teams.
+    The league info should change if a new league is loaded. 
     """
-    league = League()
-    user_map = league.map_users_to_team_name()
-    """
-    Get all picks in sleeper draft
-    """
-    DRAFT_ID = 859302163317399552  #    850087629952249857  # 858793089177886720  # 855693188285992960  # mock 858792885288538112
-    DRAFT_ID_2022_WEEZ_LEAGUE = 850087629952249857  # 854953046042583040
-
-    """
-    get draft order from weez league, map to the user names, and sort by the draft position
-    """
-    draft = Drafts(DRAFT_ID_2022_WEEZ_LEAGUE)
-    draft_info = draft.get_specific_draft()
-
+    league_id_json = Path('data/league_ids/leagues.json')
     try:
-        draft_order = draft_info['draft_order']
-        draft_order = {v: user_map[k] for k, v in draft_order.items()}
-    except:
-        draft_order = [x for x in range(MAX_COLS)]
-    draft_order = [x for x in range(MAX_COLS+1)]
-    # ---- draft_order to be used to create labels above the draft board  -----#
+        with open(league_id_json, "r") as file:
+            league_id_list = json.load(file)
+            league_id_list = list(set(league_id_list))
+            # ----Get Text for Draft Order Buttons (teams) ------#
+            league = League(league_id_list[0])
+            draft_order = get_draft_order(league)
+            # ---Calc Custom Scores-------#
+            start_time = time.time()
+            sg.popup_quick_message("Calculating Custom Score")
+            PP['fpts'] = PP.apply(lambda row: get_custom_score_row(row, league.scoring_settings), axis=1)
+            PP = add_vbd(PP)
+            end_time = time.time()
+            print(f"Time to calc custom scores: {end_time-start_time}")
+    except FileNotFoundError:
+        sg.popup_quick_message("League not found.")
+        Path('data/league_ids').mkdir(parents=True, exist_ok=True)
+        league_id_list = []
+        draft_order = [x for x in range(MAX_COLS + 1)]
 
-    """
-    Now create draft for the mock draft we are using
-    """
-    draft = Drafts(DRAFT_ID)
+
     live_draft = False
-
-    if live_draft:
-        drafted_list = draft.get_all_picks()
-    else:
-        drafted_list = PP.loc[PP["is_keeper"] == True, 'sleeper_id'].to_list()
 
     # -------Draftboard Arrays--------#
     adp_db = get_db_arr(PP, "adp")
@@ -198,12 +192,15 @@ def TableSimulation():
     """
     # noinspection PyTypeChecker
     col1_layout = [[sg.T("", size=(3, 1), justification='left')] +
-                   [sg.B(button_text=draft_order[c + 1], border_width=0, p=(1, 1), key=f"TEAM{c}", size=(13, 0)) for c
-                    in range(MAX_COLS)]] + \
+                   [sg.B(button_text=draft_order[c + 1],
+                         border_width=0, p=(1, 1),
+                         key=f"TEAM{c}",
+                         size=(12, 0))
+                    for c  in range(MAX_COLS)]] + \
                   [[sg.T(f"R{str(r + 1)}", size=(3, 1), justification='left')] +
                    [sg.B(button_text=f"{db[r, c]['button_text']}",
                          enable_events=True,
-                         size=(13, 0),
+                         size=(12, 0),
                          p=(1, 1),
                          border_width=0,
                          button_color=BG_COLORS[db[r, c]["position"]],
@@ -216,12 +213,17 @@ def TableSimulation():
                                    "button_color": BG_COLORS[db[r, c]["position"]],
                                    "sleeper_id": "",
                                    },
-                         key=(r, c)) for c in range(MAX_COLS)] for r in
-                   range(MAX_ROWS)]  # , size=(1200, 796), scrollable=True, expand_x=True, expand_y=True, )
+                         key=(r, c))
+                    for c in range(MAX_COLS)] for r in range(MAX_ROWS)]  # , size=(1200, 796), scrollable=True, expand_x=True, expand_y=True, )
 
     col1 = sg.Column(col1_layout, size=(1150, 800), scrollable=True, vertical_alignment="bottom",
                      justification="bottom",
-                     element_justification="left", pad=5, grab=True)
+                     vertical_scroll_only=False,
+                     element_justification="left",
+                     sbar_width=5,
+                     expand_y=True,
+                     expand_x=True,
+                     pad=1)
 
     # New layouts for Tabs containing tables:
     tab1_layout = [[sg.T("Cheat Sheets")],
@@ -237,8 +239,12 @@ def TableSimulation():
     tab2 = sg.Tab("ECR Overall", tab2_layout, key="tab2")
     #------ Put Tabs in Groups and then in a Pane ------ #
     tab_group = [[sg.TabGroup([[tab1, tab2]], key="tab_group")]]
-    col2 = sg.Column(tab_group, size=(300, 796), scrollable=True, grab=True, pad=5)
-    pane1 = sg.Pane([col1, col2], orientation="horizontal", )
+    col2 = sg.Column(tab_group, size=(300, 796), scrollable=True, grab=True, pad=1, sbar_width=5)
+    pane1 = sg.Pane([col1, col2],
+                    orientation="horizontal",
+                    handle_size=5,
+                    expand_x=True,
+                    expand_y=True)
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
                sg.Button('Load ECR', key="-Load-ECR-"),
@@ -249,10 +255,18 @@ def TableSimulation():
                sg.Input(key='-Search-', enable_events=True, focus=True, tooltip="Find Player"),
                sg.Push(),
                sg.Checkbox("Hide Drafted Players", enable_events=True, key="-HIDE-DRAFTED-")],
-              [pane1]]
+              [col1] + [col2]
+              # [pane1]
+              # [sg.Text("bottom?")]
+              ]
 
     window = sg.Window('Weez Draftboard',
-                       layout, return_keyboard_events=True, resizable=True, scaling=2, right_click_menu_tearoff=1)
+                       layout,
+                       return_keyboard_events=True,
+                       resizable=True,
+                       scaling=1,
+                       # right_click_menu_tearoff=1
+                       )
     """
     WHILE LOOP
     """
@@ -262,12 +276,20 @@ def TableSimulation():
         # --- Process buttons --- #
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
+
+        elif event == 'Select League':
+            league = LeaguePopUp()
+            draft_order = get_draft_order(league)
+            for c in range(MAX_COLS):
+                window[f"TEAM{c}"].update(text=f"{draft_order[c + 1]}")
+            sg.popup_quick_message("Calculating Custom Score")
+            PP['fpts'] = PP.apply(lambda row: get_custom_score_row(row, league.scoring_settings), axis=1)
+            PP = add_vbd(PP)
         # click on button event
         elif event == "-HIDE-DRAFTED-":
             for t in ["ALL", "QB", "WR", "TE", "RB"]:
                 table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
                 window[f"-{t}-TABLE-"].update(values=table_data)
-
         elif event in [(r, c) for c in range(MAX_COLS) for r in range(MAX_ROWS)]:
             r, c = event
             s_id = window[(r, c)].metadata["sleeper_id"]
@@ -359,10 +381,8 @@ def TableSimulation():
             for c in range(MAX_COLS):
                 for r in range(MAX_ROWS):
                     window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]], text=db[r, c]['button_text'])
-
         elif event == "View Player Pool":
-            pass
-            # ViewPlayerPool()
+            ViewPlayerPool(PP)
         elif event == 'About...':
             sg.popup('Demo of table capabilities')
         elif event == 'Set Keepers':
@@ -382,6 +402,17 @@ def TableSimulation():
             sg.popup('Clear All Keepers')
         elif event == 'Select Draft ID':
             sg.PopupScrolled('Select Draft ID')
+            """
+              Now create draft for the mock draft we are using
+              """
+            draft = Drafts()
+            live_draft = True
+
+            if live_draft:
+                drafted_list = draft.get_all_picks()
+            else:
+                drafted_list = PP.loc[PP["is_keeper"] == True, 'sleeper_id'].to_list()
+
             # pdb.set_trace()
         elif event == "Get Live Picks":
             try:

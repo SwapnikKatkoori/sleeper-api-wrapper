@@ -309,17 +309,6 @@ def clean_flex_df(flex_df):
     return flex_df
 
 
-def get_cheatsheet_table(df, pos="all", hide_drafted=False):
-    table_data = get_cheatsheet_data(df, pos, hide_drafted)
-
-    table = sg.Table(table_data, headings=['sleeper_id', 'Tier', pos, ], col_widths=[0, 3, 35],
-                     visible_column_map=[False, True, True,],
-                     auto_size_columns=True, max_col_width=35, display_row_numbers=False,
-                     num_rows=min(10, len(table_data)), row_height=15, justification="left",
-                     key=f"-{pos}-TABLE-", expand_x=True, expand_y=True, visible=True)
-    return table
-
-
 def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     """
     Cheat Sheet Data for the rows of the tables building
@@ -348,6 +337,47 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     df = df.fillna(value="-")
     table_data = df.values.tolist()
     return table_data
+
+
+def get_cheatsheet_table(df, pos="all", hide_drafted=False):
+    table_data = get_cheatsheet_data(df, pos, hide_drafted)
+
+    table = sg.Table(table_data, headings=['sleeper_id', 'Tier', pos, ], col_widths=[0, 3, 35],
+                     visible_column_map=[False, True, True,],
+                     auto_size_columns=True, max_col_width=35, display_row_numbers=False,
+                     num_rows=min(10, len(table_data)), row_height=15, justification="left",
+                     key=f"-{pos}-TABLE-", expand_x=True, expand_y=True, visible=True)
+    return table
+
+
+def get_draft_order(league):
+    """
+      Get League and user/map
+      """
+
+    user_map = league.map_users_to_team_name()
+    """
+    Get all picks in sleeper draft
+    """
+    league_dict = league.get_league()
+    draft_id = league_dict["draft_id"]
+    # DRAFT_ID = 859302163317399552  # 850087629952249857  # 858793089177886720  # 855693188285992960  # mock 858792885288538112
+    # DRAFT_ID_2022_WEEZ_LEAGUE = 850087629952249857  # 854953046042583040
+
+    """
+    get draft order from weez league, map to the user names, and sort by the draft position
+    """
+    draft = Drafts(draft_id)
+    draft_info = draft.get_specific_draft()
+
+    try:
+        draft_order = draft_info['draft_order']
+        draft_order = {v: user_map[k] for k, v in draft_order.items()}
+    except:
+        draft_order = [x for x in range(MAX_COLS)]
+
+    return draft_order
+
 
 
 def get_fpros_projections():
@@ -495,6 +525,69 @@ def clear_all_keepers():
         json.dump(keeper_list, file, indent=4)
     print("keepers.json overwritten, set as []")
 
+"""
+Custom score and VBD info ported from fpros]
+"""
+
+
+def get_custom_score_row(row, scoring_keys):
+    score = 0
+    for k, v in scoring_keys.items():
+        try:
+            score += scoring_keys[k] * row[k]
+        except KeyError:
+            pass
+    return round(score, 2)
+
+
+def add_vbd(df):
+    # get thresholds
+    try:
+        if df.iloc[1]['position'] == 'QB':
+            vols_threshold = df.iloc[25]['fpts']
+            vorp_threshold = df.iloc[31]['fpts']
+        elif df.iloc[1]['position'] == 'RB':
+            vols_threshold = df.iloc[25]['fpts']
+            vorp_threshold = df.iloc[55]['fpts']
+        elif df.iloc[1]['position'] == 'WR':
+            vols_threshold = df.iloc[25]['fpts']
+            vorp_threshold = df.iloc[63]['fpts']
+        elif df.iloc[1]['position'] == 'TE':
+            vols_threshold = df.iloc[10]['fpts']
+            vorp_threshold = df.iloc[22]['fpts']
+    except KeyError:
+        print("Key Error in FPros Add VBD Func")
+
+    # TODO Figure out this chained_assignment issue with the error message of:
+    #       SettingWithCopyError:
+    #       A value is trying to be set on a copy of a slice from a DataFrame.
+    #       Try using .loc[row_indexer,col_indexer] = value instead
+    pd.options.mode.chained_assignment = None
+    df["vols"] = df.apply(lambda row: calc_vols(row, vols_threshold), axis=1)
+    df["vorp"] = df.apply(lambda row: calc_vorp(row, vorp_threshold), axis=1)
+    df["vbd"] = df.apply(lambda row: calc_vbd(row), axis=1)
+    df['vona'] = df.fpts.diff(periods=-1)
+    df = sort_reset_index(df)
+    df["position_rank_vbd"] = df.index + 1
+    return df
+
+def sort_reset_index(df):
+    """
+    This gets called every time we add vbd to sort by vbd and reset the index
+    """
+    df.sort_values(by=["vbd", "fpts"], ascending=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+def calc_vols(row, vols_threshold):
+    return max(0, row['fpts'] - vols_threshold)
+
+
+def calc_vorp(row, vorp_threshold):
+    return max(0, row['fpts'] - vorp_threshold)
+
+
+def calc_vbd(row):
+    return max(0, row['vols'] + row['vorp'])
 
 
 """

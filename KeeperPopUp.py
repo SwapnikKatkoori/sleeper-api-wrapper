@@ -25,7 +25,6 @@ def KeeperPopUp(df):
             [sg.Listbox(not_kept_list, key='-DRAFT-POOL-', size=(20, 15), auto_size_text=True,
                         select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]]
     col5 = [[sg.Text("Pick Player")],
-
             [sg.Button("Add", key='-ADD-KEEPER-', enable_events=True)],
             [sg.Button("Remove", key='-REMOVE-KEEPER-', enable_events=True)],
             [sg.Button("Set", key='-SET-KEEPER-', enable_events=True)],
