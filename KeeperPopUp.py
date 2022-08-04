@@ -126,7 +126,7 @@ def KeeperPopUp(df):
             for k in mock_keepers:
                 k['sleeper_id'] = k['player_id']
                 k['is_keeper'] = True
-                k['is_drafted'] = True
+                k['is_drafted'] = False
             # save the mock keepers to the json file
             save_keepers(mock_keepers)
             keeper_list, keeper_list_text = open_keepers()

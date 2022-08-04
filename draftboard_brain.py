@@ -166,10 +166,10 @@ def get_cheatsheet_list(df, pos):
     return df.values.tolist()
 
 
-def get_db_arr(df, key):
+def get_db_arr(df, key, df_loc_col="is_keeper"):
     keys = {"adp": {"sort": "adp_pick", "pick_no": "adp_pick_no"},
             "ecr": {"sort": "superflex_rank_ecr", "pick_no": 'ecr_pick_no'},
-            "empty": {"sort": "", "pick_no": ""}
+            "keepers": {"sort": "", "pick_no": ""}
             }
     if key in ["adp", "ecr"]:
         sort = keys[key]['sort']
@@ -177,16 +177,33 @@ def get_db_arr(df, key):
         non_kept_picks = [n + 1 for n in range(len(df)) if n + 1 not in df['pick_no'].to_list()]
         df[pick_no] = df["pick_no"]
         df.sort_values(by=sort, ascending=True, inplace=True)
-        df.loc[df["is_keeper"] != True, f'{key}_pick_no'] = non_kept_picks
+        df.loc[df[df_loc_col] != True, f'{key}_pick_no'] = non_kept_picks
         df.sort_values(by=pick_no, ascending=True, inplace=True)
         arr = np.array(df[:MAX_ROWS * MAX_COLS].to_dict("records"))
         arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
         arr[1::2, :] = arr[1::2, ::-1]
-    elif key == "empty":
+    elif key == "keepers":
         arr = np.empty([MAX_ROWS, MAX_COLS])
         arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
         arr[1::2, :] = arr[1::2, ::-1]
-        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "\n\n", "position": "-"})
+        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "\n\n", "position": "-", "sleeper_id": "-"})
+        # Placing keepers on the empty draft board
+        keeper_pool = df.loc[df["is_keeper"] == True].to_dict("records")
+        for p in keeper_pool:
+            loc = (p["round"] - 1, p["draft_slot"] - 1)
+            arr[loc] = {"button_text": p["button_text"], "position": p["position"], "sleeper_id": p["sleeper_id"]}
+    elif key == "live":
+        arr = np.empty([MAX_ROWS, MAX_COLS])
+        arr = np.reshape(arr, (MAX_ROWS, MAX_COLS))
+        arr[1::2, :] = arr[1::2, ::-1]
+        arr = np.full((MAX_ROWS, MAX_COLS), {"button_text": "\n\n", "position": "-", "sleeper_id": "-"})
+        # Placing keepers on the empty draft board
+        drafted_pool = df.loc[df["is_drafted"] == True].to_dict("records")
+        for p in drafted_pool:
+            loc = (p["round"] - 1, p["draft_slot"] - 1)
+            arr[loc] = {"button_text": p["button_text"], "position": p["position"], "sleeper_id": p["sleeper_id"]}
+        pass
+
     return arr
 
 
@@ -339,10 +356,13 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
 
 def get_cheatsheet_table(df, pos="all", hide_drafted=False):
     table_data = get_cheatsheet_data(df, pos, hide_drafted)
-
-    table = sg.Table(table_data, headings=['sleeper_id', 'Tier', pos, ], col_widths=[0, 3, 35],
-                     visible_column_map=[False, True, True,],
-                     auto_size_columns=True, max_col_width=35, display_row_numbers=False,
+    table = sg.Table(table_data, headings=['sleeper_id', 'Tier', pos, ],
+                     col_widths=[0, 3, 20],
+                     visible_column_map=[False, True, True],
+                     auto_size_columns=False,
+                     max_col_width=20,
+                     sbar_width=2,
+                     display_row_numbers=False,
                      num_rows=min(10, len(table_data)), row_height=15, justification="left",
                      key=f"-{pos}-TABLE-", expand_x=True, expand_y=True, visible=True)
     return table
@@ -433,10 +453,10 @@ def get_player_pool(player_count=400):
     p_pool.reset_index(drop=True, inplace=True)
     p_pool['adp_pick'] = p_pool.index + 1
 
-    p_pool[['superflex_rank_ecr', 'superflex_tier_ecr']] = p_pool[
-        ['superflex_rank_ecr', 'superflex_tier_ecr']].fillna(
+    #----Clean up columns to be INT values and fill NA,.
+    p_pool[['superflex_rank_ecr', 'superflex_tier_ecr', 'position_rank_ecr', 'position_tier_ecr']] = p_pool[
+        ['superflex_rank_ecr', 'superflex_tier_ecr', 'position_rank_ecr', 'position_tier_ecr']].fillna(
         value=999).astype(int)
-
     p_pool['team'] = p_pool['team'].fillna("FA")
     p_pool['pos_rank'] = p_pool["pos_rank"].fillna("NA999")
 
@@ -462,7 +482,7 @@ def get_player_pool(player_count=400):
         id = p['sleeper_id']
         is_keeper = p['is_keeper']
         # initializing the keeper/drafted value as them same.  The values will update while drafting
-        is_drafted = p['is_keeper']
+        is_drafted = False  # p['is_keeper']
         pick_no = p['pick_no']
         slot = p['draft_slot']
         rd = p['round']
@@ -610,6 +630,8 @@ def sort_reset_index(df):
     df.sort_values(by=["vbd", "fpts"], ascending=False, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
+
+
 def calc_vols(row, vols_threshold):
     return max(0, row['fpts'] - vols_threshold)
 
