@@ -195,9 +195,9 @@ def WeezDraftboard():
                          key=(r, c))
                     for c in range(MAX_COLS)] for r in range(MAX_ROWS)]  # , size=(1200, 796), scrollable=True, expand_x=True, expand_y=True, )
 
-    col1 = sg.Column(col1_layout, scrollable=True, vertical_alignment="bottom", size=(1300, 800),
+    col1 = sg.Column(col1_layout, scrollable=True, vertical_alignment="bottom", size=(1250, 800),
                      justification="left",
-                     vertical_scroll_only=False,
+                     vertical_scroll_only=True,
                      element_justification="left",
                      sbar_width=2,
                      expand_y=True,
@@ -219,12 +219,26 @@ def WeezDraftboard():
     # ------ Put Tabs in Groups and then in a Pane ------ #
     tab_group = [[sg.TabGroup([[tab1, tab2]], key="tab_group")]]
     col2 = sg.Column(tab_group, scrollable=False, grab=True, pad=(1,5), size=(300, 800))
+    headings = PP.columns.tolist()
+    table_data = PP.values.tolist()
+    #  table = sg.Table(table_data, headings=headings, vertical_scroll_only=False)
+    table = get_bottom_table(PP)
+    col3_layout = [[table]]
+    col3 = sg.Column(col3_layout)
+    # wrapping col1 in another column before the pane for scrolling
     col1_1 = sg.Column([[col1]], expand_x=True, expand_y=True)
     pane1 = sg.Pane([col1_1, col2],
                     orientation="horizontal",
                     handle_size=5,
                     expand_x=True,
                     expand_y=True)
+    col4 = sg.Column([[pane1]], expand_y=True, expand_x=True)
+    pane2 = sg.Pane([col4, col3],
+                    orientation="vertical",
+                    handle_size=5,
+                    expand_x=True,
+                    expand_y=True)
+    # pane2 = sg.Pane
     layout = [[sg.Menu(menu_def)],
               [sg.Text('Weez Draftboard', font='Any 18'),
                sg.Button('Load ECR', key="-Load-ECR-"),
@@ -237,7 +251,7 @@ def WeezDraftboard():
                sg.Push(),
                sg.Checkbox("Hide Drafted Players", enable_events=True, key="-HIDE-DRAFTED-")],
               # [col1] + [col2]
-              [pane1]
+              [pane2],
               # [sg.Text("bottom?")]
               ]
 
@@ -246,6 +260,7 @@ def WeezDraftboard():
                        return_keyboard_events=True,
                        resizable=True,
                        scaling=0,
+                       size=(1600,900)
                        # right_click_menu_tearoff=1
                        )
     """
@@ -283,13 +298,13 @@ def WeezDraftboard():
             if window[(r, c)].metadata["is_clicked"]:
                 window[(r, c)].update(button_color='white on gray')
                 PP.loc[PP["sleeper_id"] == s_id, "is_drafted"] = True
-                for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                for t in ["ALL", "QB", "WR", "TE", "RB", "BOTTOM"]:
                     table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
                     window[f"-{t}-TABLE-"].update(values=table_data)
             else:
                 window[(r, c)].update(button_color=window[(r, c)].metadata["button_color"])
                 PP.loc[PP["sleeper_id"] == s_id, "is_drafted"] = False
-                for t in ["ALL", "QB", "WR", "TE", "RB"]:
+                for t in ["ALL", "QB", "WR", "TE", "RB", "BOTTOM"]:
                     table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
                     window[f"-{t}-TABLE-"].update(values=table_data)
         elif event == "-CONNECT-TO-LIVE-DRAFT-":
@@ -335,17 +350,12 @@ def WeezDraftboard():
                 # ------ReCreate the DB board ------- #
                 db = get_db_arr(PP, "live")
                 if live_board:
+                    # if the main DB is loaded, the picks will update on the board
                     window["-LOAD-DB-"].click()
-
-
-                    # db = db.where[(r-1, c-1)]["button_text"] = button_text
-                    # db[(r - 1, c - 1)]["position"] = position
-                    # db[(r - 1, c - 1)]["sleeper_id"] = sleeper_id
-                    # print(db[r-1, c-1])
             else:
                 drafted_ids = PP.loc[PP["is_drafted"] == True, "sleeper_id"].tolist()
             PP.loc[PP["sleeper_id"].isin(drafted_ids), "is_drafted"] = True
-            for t in ["ALL", "QB", "WR", "TE", "RB"]:
+            for t in ["ALL", "QB", "WR", "TE", "RB", "BOTTOM"]:
                 table_data = get_cheatsheet_data(PP, pos=t, hide_drafted=window["-HIDE-DRAFTED-"].get())
                 window[f"-{t}-TABLE-"].update(values=table_data)
             # assign the player to the draftboard array
@@ -367,14 +377,15 @@ def WeezDraftboard():
                         if window[(r, c)].metadata["is_clicked"]:
                             window[(r, c)].update(button_color='white on gray')
                         else:
-                            window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
+                            window[(r, c)].update(button_color=window[(r, c)].metadata["button_color"])
                     elif search_text in window[(r, c)].get_text().lower():
                         window[(r, c)].update(button_color="black on yellow")
                     else:
                         if window[(r, c)].metadata["is_clicked"]:
                             window[(r, c)].update(button_color='white on gray')
                         else:
-                            window[(r, c)].update(button_color=BG_COLORS[db[r, c]["position"]])
+                            #window[(r, c)].update(button_color=BG_COLORS[window[(r, c)].metadata["button_color"]])
+                            window[(r, c)].update(button_color=window[(r, c)].metadata["button_color"])
         elif event == '-Drafted-':
             search_text = values["-Drafted-"].lower()
             for player in drafted_list:

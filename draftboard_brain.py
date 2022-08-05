@@ -333,18 +333,20 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     pos = pos.upper()  # Caps pos to align with position values "QB, RB, WR TE" and sg element naming format
 
     if hide_drafted:
-        df = df.loc[df["is_drafted"].isin([False, None]), :]  #  True]
-        # df = df2
-        # print(df.head())
+        df = df.loc[df["is_keeper"].isin([False, None]), :]
+        df = df.loc[df["is_drafted"].isin([False, None]), :]
+        # df = df[(df["is_drafted"].isin([False, None])) | (df["is_keeper"].isin([False, None]))]
     else:
         pass
 
     if pos == "ALL":
         df = df.sort_values(by=['superflex_rank_ecr'], ascending=True, na_position='last')
         cols = ['sleeper_id', 'superflex_tier_ecr', 'cheatsheet_text']
+    elif pos == "BOTTOM":
+        df = df.sort_values(by=["vbd_rank"], ascending=True, na_position="last")
+        cols = ['sleeper_id', 'name', 'fpts', 'vbd_rank', 'position_rank_vbd', 'vbd', 'vorp', 'vols', 'vona']
     else:
         df = df.loc[df.position == pos]
-        # df2 = df.loc[:, df["position"] == pos]
         cols = ['sleeper_id', 'position_tier_ecr', 'cheatsheet_text']
         df = df.sort_values(by=["position_rank_ecr"], ascending=True, na_position="last")
 
@@ -353,6 +355,30 @@ def get_cheatsheet_data(df, pos="all", hide_drafted=False):
     table_data = df.values.tolist()
     return table_data
 
+
+def get_bottom_table(df, hide_drafted=False):
+    if hide_drafted:
+        df = df.loc[df["is_drafted"].isin([False, None]), :]
+    else:
+        pass
+
+    df = df.sort_values(by=["vbd_rank"], ascending=True, na_position="last")
+
+    cols = ['sleeper_id', 'name', 'fpts', 'vbd_rank', 'position_rank_vbd', 'vbd', 'vorp', 'vols', 'vona']
+    df = df[cols]
+    df = df.fillna(value="-")
+    table_data = df.values.tolist()
+    table = sg.Table(table_data, headings=['sleeper_id', 'Name', 'fpts', 'VBD Rank', 'VBD Pos Rank', 'VBD', 'VORP', 'VOLS', 'VONA'],
+                     # col_widths=[0, 3, 20],
+                     visible_column_map=[False, True, True, True, True, True, True, True, True],
+                     auto_size_columns=True,
+                     max_col_width=20,
+                     sbar_width=2,
+                     display_row_numbers=False,
+                     vertical_scroll_only=False,
+                     num_rows=min(50, len(table_data)), row_height=15, justification="left",
+                     key=f"-BOTTOM-TABLE-", expand_x=True, expand_y=True, visible=True)
+    return table
 
 def get_cheatsheet_table(df, pos="all", hide_drafted=False):
     table_data = get_cheatsheet_data(df, pos, hide_drafted)
@@ -497,12 +523,18 @@ def get_player_pool(player_count=400):
 
     p_pool.dropna(subset=["name", "button_text"], inplace=True)
 
-    #------Now Detect if league exists and then calc custom score. -----#
+    # ------Now Detect if league exists and then calc custom score. -----#
     p_pool, draft_order, league_found = load_saved_league(p_pool)
-    # MOCK - 855693188285992960; 858792885288538112; 858793089177886720
+    # ---- Add VBD per position  ----- #
+    p_pool = add_vbd(p_pool)
+
+    # ------ Save Columns to JSON for reference ------- #
+    with open('data/draftboard/player_pool_columns.json', "w") as file:
+        json.dump(p_pool.columns.tolist(), file, indent=4)
     end_time = time.time()
     print(f"Time to make Player Draft Pool: {end_time - start_time}")
     return p_pool, draft_order, league_found
+
 
 def load_saved_league(df):
 
@@ -523,7 +555,6 @@ def load_saved_league(df):
             start_time = time.time()
             sg.popup_quick_message("Calculating Custom Score")
             df['fpts'] = df.apply(lambda row: get_custom_score_row(row, league.scoring_settings), axis=1)
-            df = add_vbd(df)
             league_found = True
             end_time = time.time()
             print(f"Time to calc custom scores: {end_time-start_time}")
@@ -593,55 +624,79 @@ def get_custom_score_row(row, scoring_keys):
 
 
 def add_vbd(df):
+
+    # or pos in ["QB", "RB", "WR", "TE"]:
+    #     p_pool.loc[p_pool["position"] == pos] = add_vbd(p_pool, pos)
     # get thresholds
-    try:
-        if df.iloc[1]['position'] == 'QB':
-            vols_threshold = df.iloc[25]['fpts']
-            vorp_threshold = df.iloc[31]['fpts']
-        elif df.iloc[1]['position'] == 'RB':
-            vols_threshold = df.iloc[25]['fpts']
-            vorp_threshold = df.iloc[55]['fpts']
-        elif df.iloc[1]['position'] == 'WR':
-            vols_threshold = df.iloc[25]['fpts']
-            vorp_threshold = df.iloc[63]['fpts']
-        elif df.iloc[1]['position'] == 'TE':
-            vols_threshold = df.iloc[10]['fpts']
-            vorp_threshold = df.iloc[22]['fpts']
-    except KeyError:
-        print("Key Error in FPros Add VBD Func")
+    df = sort_reset_index(df, sort_by="fpts")
 
-    # TODO Figure out this chained_assignment issue with the error message of:
-    #       SettingWithCopyError:
-    #       A value is trying to be set on a copy of a slice from a DataFrame.
-    #       Try using .loc[row_indexer,col_indexer] = value instead
-    pd.options.mode.chained_assignment = None
-    df["vols"] = df.apply(lambda row: calc_vols(row, vols_threshold), axis=1)
-    df["vorp"] = df.apply(lambda row: calc_vorp(row, vorp_threshold), axis=1)
-    df["vbd"] = df.apply(lambda row: calc_vbd(row), axis=1)
-    df['vona'] = df.fpts.diff(periods=-1)
-    df = sort_reset_index(df)
-    df["position_rank_vbd"] = df.index + 1
-    return df
+    vols_cutoff = {"QB": 25, "RB": 25, "WR": 25, "TE": 10}
+    vorp_cutoff = {"QB": 31, "RB": 55, "WR": 63, "TE": 22}
+    new_df = pd.DataFrame()
+    for pos in ["QB", "RB", "WR", "TE"]:
+        temp_df = df.loc[df["position"] == pos]
+        vols_threshold = temp_df.iloc[vols_cutoff[pos]]
+        vorp_threshold = temp_df.iloc[vorp_cutoff[pos]]
+        """        
+        try:
+            if df.iloc[1]['position'] == 'QB':
+                vols_threshold = df.iloc[25]['fpts']
+                vorp_threshold = df.iloc[31]['fpts']
+            elif df.iloc[1]['position'] == 'RB':
+                vols_threshold = df.iloc[25]['fpts']
+                vorp_threshold = df.iloc[55]['fpts']
+            elif df.iloc[1]['position'] == 'WR':
+                vols_threshold = df.iloc[25]['fpts']
+                vorp_threshold = df.iloc[63]['fpts']
+            elif df.iloc[1]['position'] == 'TE':
+                vols_threshold = df.iloc[10]['fpts']
+                vorp_threshold = df.iloc[22]['fpts']
+        except KeyError:
+            print("Key Error in FPros Add VBD Func")
+        """
+        # TODO Figure out this chained_assignment issue with the error message of:
+        #       SettingWithCopyError:
+        #       A value is trying to be set on a copy of a slice from a DataFrame.
+        #       Try using .loc[row_indexer,col_indexer] = value instead
+        pd.options.mode.chained_assignment = None
+        temp_df["vols"] = temp_df.apply(lambda row: calc_vols(row, vols_threshold), axis=1)
+        temp_df["vorp"] = temp_df.apply(lambda row: calc_vorp(row, vorp_threshold), axis=1)
+        temp_df["vbd"] = temp_df.apply(lambda row: calc_vbd(row), axis=1)
+        temp_df['vona'] = round(temp_df.fpts.diff(periods=-1))
+        temp_df = sort_reset_index(temp_df, sort_by=["vbd", "fpts"])
+        temp_df["position_rank_vbd"] = temp_df.index + 1
+        new_df = pd.concat([new_df, temp_df], axis=0)
+        # print(new_df)
 
-def sort_reset_index(df):
+    new_df = merge_dfs(new_df, df, "sleeper_id", how="outer")
+    new_df = sort_reset_index(new_df, sort_by=["vbd", "fpts"])
+    new_df['vbd_rank'] = new_df.index + 1
+    name1 = df["name"].tolist()
+    name2 = new_df["name"].tolist()
+    names_not_in = list(set(name2) - set(name1))
+    print(names_not_in)
+
+    return new_df
+
+def sort_reset_index(df, sort_by):
     """
     This gets called every time we add vbd to sort by vbd and reset the index
     """
-    df.sort_values(by=["vbd", "fpts"], ascending=False, inplace=True)
+    df.sort_values(by=sort_by, ascending=False, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
 
 
 def calc_vols(row, vols_threshold):
-    return max(0, row['fpts'] - vols_threshold)
+    return round(max(0, row['fpts'] - vols_threshold['fpts']))
 
 
 def calc_vorp(row, vorp_threshold):
-    return max(0, row['fpts'] - vorp_threshold)
+    return round(max(0, row['fpts'] - vorp_threshold['fpts']))
 
 
 def calc_vbd(row):
-    return max(0, row['vols'] + row['vorp'])
+    return round(max(0, row['vols'] + row['vorp']))
 
 
 """
