@@ -1,0 +1,218 @@
+[
+    {
+        "name": "Stefon Diggs",
+        "sleeper_id": "2449",
+        "button_text": "Stefon\nDiggs\nWR (BUF) 7",
+        "is_keeper": true,
+        "pick_no": 15,
+        "draft_slot": 10,
+        "round": 2
+    },
+    {
+        "name": "Cooper Kupp",
+        "sleeper_id": "4039",
+        "button_text": "Cooper\nKupp\nWR (LAR) 7",
+        "is_keeper": true,
+        "pick_no": 27,
+        "draft_slot": 3,
+        "round": 3
+    },
+    {
+        "name": "David Montgomery",
+        "sleeper_id": "5892",
+        "button_text": "David\nMontgomery\nRB (CHI) 14",
+        "is_keeper": true,
+        "pick_no": 39,
+        "draft_slot": 10,
+        "round": 4
+    },
+    {
+        "name": "Ja'Marr Chase",
+        "sleeper_id": "7564",
+        "button_text": "Ja'Marr\nChase\nWR (CIN) 10",
+        "is_keeper": true,
+        "pick_no": 51,
+        "draft_slot": 3,
+        "round": 5
+    },
+    {
+        "name": "Mike Williams",
+        "sleeper_id": "4068",
+        "button_text": "Mike\nWilliams\nWR (LAC) 8",
+        "is_keeper": true,
+        "pick_no": 74,
+        "draft_slot": 2,
+        "round": 7
+    },
+    {
+        "name": "Jaylen Waddle",
+        "sleeper_id": "7526",
+        "button_text": "Jaylen\nWaddle\nWR (MIA) 11",
+        "is_keeper": true,
+        "pick_no": 89,
+        "draft_slot": 8,
+        "round": 8
+    },
+    {
+        "name": "Michael Pittman Jr.",
+        "sleeper_id": "6819",
+        "button_text": "Michael\nPittman\nWR (IND) 14",
+        "is_keeper": true,
+        "pick_no": 98,
+        "draft_slot": 2,
+        "round": 9
+    },
+    {
+        "name": "Brandin Cooks",
+        "sleeper_id": "2197",
+        "button_text": "Brandin\nCooks\nWR (HOU) 6",
+        "is_keeper": true,
+        "pick_no": 101,
+        "draft_slot": 5,
+        "round": 9
+    },
+    {
+        "name": "Kadarius Toney",
+        "sleeper_id": "7606",
+        "button_text": "Kadarius\nToney\nWR (NYG) 9",
+        "is_keeper": true,
+        "pick_no": 179,
+        "draft_slot": 11,
+        "round": 15
+    },
+    {
+        "name": "Elijah Moore",
+        "sleeper_id": "7596",
+        "button_text": "Elijah\nMoore\nWR (NYJ) 10",
+        "is_keeper": true,
+        "pick_no": 114,
+        "draft_slot": 7,
+        "round": 10
+    },
+    {
+        "name": "A.J. Brown",
+        "sleeper_id": "5859",
+        "button_text": "A.J.\nBrown\nWR (PHI) 7",
+        "is_keeper": true,
+        "pick_no": 141,
+        "draft_slot": 4,
+        "round": 12
+    },
+    {
+        "name": "Rashod Bateman",
+        "sleeper_id": "7571",
+        "button_text": "Rashod\nBateman\nWR (BAL) 10",
+        "is_keeper": true,
+        "pick_no": 151,
+        "draft_slot": 7,
+        "round": 13
+    },
+    {
+        "name": "Justin Herbert",
+        "sleeper_id": "6797",
+        "button_text": "Justin\nHerbert\nQB (LAC) 8",
+        "is_keeper": true,
+        "pick_no": 152,
+        "draft_slot": 8,
+        "round": 13
+    },
+    {
+        "name": "Travis Etienne Jr.",
+        "sleeper_id": "7543",
+        "button_text": "Travis\nEtienne\nRB (JAX) 11",
+        "is_keeper": true,
+        "pick_no": 160,
+        "draft_slot": 9,
+        "round": 14
+    },
+    {
+        "name": "Jalen Hurts",
+        "sleeper_id": "6904",
+        "button_text": "Jalen\nHurts\nQB (PHI) 7",
+        "is_keeper": true,
+        "pick_no": 163,
+        "draft_slot": 6,
+        "round": 14
+    },
+    {
+        "name": "Dawson Knox",
+        "sleeper_id": "5906",
+        "button_text": "Dawson\nKnox\nTE (BUF) 7",
+        "is_keeper": true,
+        "pick_no": 168,
+        "draft_slot": 1,
+        "round": 14
+    },
+    {
+        "name": "Cordarrelle Patterson",
+        "sleeper_id": "1535",
+        "button_text": "Cordarrelle\nPatterson\nRB (ATL) 14",
+        "is_keeper": true,
+        "pick_no": 180,
+        "draft_slot": 12,
+        "round": 15
+    },
+    {
+        "name": "J.K. Dobbins",
+        "sleeper_id": "6806",
+        "button_text": "J.K.\nDobbins\nRB (BAL) 10",
+        "is_keeper": true,
+        "pick_no": 181,
+        "draft_slot": 12,
+        "round": 16
+    },
+    {
+        "name": "Gabriel Davis",
+        "sleeper_id": "6943",
+        "button_text": "Gabriel\nDavis\nWR (BUF) 7",
+        "is_keeper": true,
+        "pick_no": 182,
+        "draft_slot": 11,
+        "round": 16
+    },
+    {
+        "name": "Elijah Mitchell",
+        "sleeper_id": "7561",
+        "button_text": "Elijah\nMitchell\nRB (SF) 9",
+        "is_keeper": true,
+        "pick_no": 184,
+        "draft_slot": 9,
+        "round": 16
+    },
+    {
+        "name": "Davis Mills",
+        "sleeper_id": "7585",
+        "button_text": "Davis\nMills\nQB (HOU) 6",
+        "is_keeper": true,
+        "pick_no": 187,
+        "draft_slot": 6,
+        "round": 16
+    },
+    {
+        "name": "Zach Ertz",
+        "sleeper_id": "1339",
+        "button_text": "Zach\nErtz\nTE (ARI) 13",
+        "is_keeper": true,
+        "pick_no": 188,
+        "draft_slot": 5,
+        "round": 16
+    },
+    {
+        "name": "Hunter Renfrow",
+        "sleeper_id": "5955",
+        "button_text": "Hunter\nRenfrow\nWR (LV) 6",
+        "is_keeper": true,
+        "pick_no": 189,
+        "draft_slot": 4,
+        "round": 16
+    },
+    {
+        "name": "Justin Jefferson",
+        "sleeper_id": "6794",
+        "button_text": "Justin\nJefferson\nWR (MIN) 7",
+        "is_keeper": true,
+        "pick_no": 192,
+        "draft_slot": 1,
+        "round": 16
+    }
+]
